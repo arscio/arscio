@@ -1,0 +1,16 @@
+{
+  "name": "aiedu",
+  "private": true,
+  "description": "aiedu (working name) - school management platform",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d db",
+    "db:migrate": "pnpm --filter @aiedu/api migrate",
+    "dev:api": "pnpm --filter @aiedu/api dev",
+    "test": "pnpm --filter @aiedu/api test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
