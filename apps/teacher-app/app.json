@@ -27,13 +27,16 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#0E7C5F"
+        }
+      ]
     ],
-    "scheme": "aiedu-teacher",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0E7C5F"
-    }
+    "scheme": "aiedu-teacher"
   }
 }

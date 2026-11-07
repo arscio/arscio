@@ -18,7 +18,7 @@ Target: ready February 2027 → staff test it next to paper in March → live in
 | `packages/brand/` | The AIEdu logo, app icons, favicons and social images (from the design export). | ✅ |
 | `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ✅ Login + school setup screens built and tested |
 | `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ✅ Login, attendance, homework built and tested |
-| `apps/parent-app/` | **Parent app** (Play Store + App Store): all children, fees, notices, results. | ⏳ Later |
+| `apps/parent-app/` | **AIEdu Parent app** (Play Store + App Store): all children, attendance, fees, homework, messages; shows each child's school identity. | ✅ Built and tested |
 | `docs/` | Decisions and the build plan. | 📄 |
 
 ## The four promises the foundation already keeps (and proves with tests)
@@ -33,8 +33,8 @@ Target: ready February 2027 → staff test it next to paper in March → live in
    Same for parents and teachers. 5 wrong passwords = 15-minute lock.
 4. **Every important change is written in an audit log that can't be edited.**
 
-There are 78 automatic checks (`apps/api/test/`) that try to break these
-promises. All 78 pass.
+There are 88 automatic checks (`apps/api/test/`) that try to break these
+promises. All 88 pass.
 
 ## Main building blocks (and why)
 
@@ -87,16 +87,19 @@ Open http://localhost:3000, type the owner's number, and use the code printed in
   by cash/UPI/cheque, and the defaulters list with phone numbers.
 - **School identity** (in School settings): logo, colour, short name, CBSE affiliation number.
 
-Notices and exams show "coming in December/January" for now.
+- **Notices**: write once, send to everyone / all parents / all staff / chosen classes or sections;
+  see how many have read it; withdraw if needed (the record stays).
+
+Exams and report cards show "coming in January" for now.
 
 ## Whose brand goes where
 
 | Who sees it | Brand |
 |---|---|
 | Admin website, teacher app (owner, principal, office, accountant, teachers) | **AIEdu** |
-| School's public website, parent app (and later student app) | **The school's** name and logo inside the app |
+| School's public website, parent app (and later student app) | **The school's** name, logo and colour inside the app (the parent app switches look per child's school) |
 | Receipts and report cards | **The school's** logo, name, colour; small "Powered by AIEdu" |
-| App store icons | AIEdu (one app serves every school) |
+| App store icons | AIEdu Parent (gold) and AIEdu Teacher (emerald). A school can later get its own build: see `apps/parent-app/brands/` |
 
 The website keeps logins in secure cookies that page code can't read, and every screen only shows what that person's roles allow.
 

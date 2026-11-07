@@ -18,6 +18,8 @@ import { registerAttendanceReportRoutes } from './routes/attendance-reports.js';
 import { registerHomeworkRoutes } from './routes/homework.js';
 import { registerIdentityRoutes } from './routes/identity.js';
 import { registerFeeRoutes } from './routes/fees.js';
+import { registerNoticeRoutes } from './routes/notices.js';
+import { registerInboxRoutes, registerParentRoutes } from './routes/parent.js';
 import cors from '@fastify/cors';
 
 export interface AppDeps {
@@ -137,8 +139,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.get('/me/children', { preHandler: requireLogin }, async (req) => {
     const schools = await withContext(db, { accountId: req.accountId }, async (tx) =>
       (
-        await tx.query<{ school_id: string; school_name: string }>(
-          `SELECT m.school_id, s.name AS school_name
+        await tx.query<{ school_id: string; school_name: string; logo_url: string | null; brand_color: string | null; short_name: string | null }>(
+          `SELECT m.school_id, s.name AS school_name, s.logo_url, s.brand_color, s.short_name
              FROM memberships m
              JOIN schools s ON s.id = m.school_id AND s.status = 'active'
              JOIN membership_roles r ON r.membership_id = m.id AND r.role = 'parent'
@@ -166,7 +168,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
           )
         ).rows,
       );
-      for (const r of rows) children.push({ ...r, schoolId: s.school_id, schoolName: s.school_name });
+      for (const r of rows) {
+        children.push({ ...r, schoolId: s.school_id, schoolName: s.school_name, schoolShortName: s.short_name,
+          schoolLogoUrl: s.logo_url, schoolColor: s.brand_color });
+      }
     }
     return { children };
   });
@@ -322,6 +327,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   registerHomeworkRoutes(app, db, requireSchool);
   registerIdentityRoutes(app, db, requireSchool);
   registerFeeRoutes(app, db, requireSchool);
+  registerNoticeRoutes(app, db, requireSchool);
+  registerParentRoutes(app, db, requireSchool);
+  registerInboxRoutes(app, db, requireLogin);
 
   return app;
 }

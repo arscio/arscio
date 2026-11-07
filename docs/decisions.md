@@ -120,6 +120,20 @@ Store apps (teacher + parent). Proper foundation with separate data per school.
 - Defaulters = anything past its due date plus grace days, biggest amounts first.
 - Fines are recorded on receipts but are not part of the "year billed / year collected" fee totals.
 
+## Notices, messages and the parent app (7 Nov 2026)
+
+- Notices go to: everyone, all parents, all staff, parents of chosen classes, or of chosen sections.
+  Each family gets one copy even with several children in the audience.
+- Notices are never deleted; they can be **withdrawn** (they disappear from apps; the record stays).
+- Every message (notice, homework, "absent today") lands in the person's **Messages** in the app and is
+  also sent as a **phone notification** (Expo's free push service). No SMS for these.
+- "Absent today" is not sent if the teacher corrected the child to present before it went out.
+- The parent app is **"AIEdu Parent"** (gold icon) for every school; inside it shows the selected child's
+  **school logo, name and colour**. Parents with children in several schools switch between them.
+- A school can later get **its own app build** (own name/icon in the stores, locked to that school) from the
+  same code: one folder per school in `apps/parent-app/brands/`.
+- Online fee payment in the parent app: shows "pay at the office" until it's built (Razorpay switch is ready).
+
 ## Still open
 
 - Final product and company name.

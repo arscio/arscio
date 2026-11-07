@@ -1,0 +1,12 @@
+{
+  "id": "aiedu",
+  "name": "AIEdu Parent",
+  "slug": "aiedu-parent",
+  "scheme": "aiedu-parent",
+  "iosBundleId": "com.aiedu.parent",
+  "androidPackage": "com.aiedu.parent",
+  "splashBackground": "#0B2A22",
+  "androidIconBackground": "#F5B700",
+  "lockToSchoolId": "",
+  "note": "Default build: one app for every school. Each school's logo, name and colour appear inside the app after login."
+}
