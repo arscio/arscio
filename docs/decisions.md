@@ -87,6 +87,16 @@ Store apps (teacher + parent). Proper foundation with separate data per school.
   If a child is later changed to present, the message may already have gone; we'll handle corrections when sending is built.
 - App IDs are placeholders (`com.aiedu.teacher`) until the company name is final.
 
+## Homework and attendance reports (7 Nov 2026)
+
+- Any teacher can give homework to any class (same as attendance; will follow your decision on that).
+  Only the teacher who gave it, or the principal/owner, can change or remove it.
+- Each family gets **one** message per homework, even with two children in the class.
+- In every-period schools, the **first period marked** each day counts as that day's attendance in reports.
+- Monthly register: "Late" counts as present, "Half day" as half, "Leave" is not counted against the child.
+  Percentage = present ÷ (present + absent). Below 75% is highlighted (CBSE's board exam requirement).
+- The office/principal can correct attendance for past days on the website; their name is saved with the change.
+
 ## Still open
 
 - Final product and company name.

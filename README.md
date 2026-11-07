@@ -16,7 +16,7 @@ Target: ready February 2027 → staff test it next to paper in March → live in
 | `apps/api/` | **The server** – the "brain" every app talks to. Handles logins, checks permissions, saves data. | ✅ Foundation built and tested |
 | `packages/shared/` | Rules shared by everything (role names, who can do what). | ✅ Built |
 | `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ✅ Login + school setup screens built and tested |
-| `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ✅ Login + attendance built and tested |
+| `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ✅ Login, attendance, homework built and tested |
 | `apps/parent-app/` | **Parent app** (Play Store + App Store): all children, fees, notices, results. | ⏳ Later |
 | `docs/` | Decisions and the build plan. | 📄 |
 
@@ -32,8 +32,8 @@ Target: ready February 2027 → staff test it next to paper in March → live in
    Same for parents and teachers. 5 wrong passwords = 15-minute lock.
 4. **Every important change is written in an audit log that can't be edited.**
 
-There are 55 automatic checks (`apps/api/test/`) that try to break these
-promises. All 55 pass.
+There are 64 automatic checks (`apps/api/test/`) that try to break these
+promises. All 64 pass.
 
 ## Main building blocks (and why)
 
@@ -76,7 +76,11 @@ Open http://localhost:3000, type the owner's number, and use the code printed in
 - **Students**: add by hand (Excel import later), search, filter by class, edit, mark as left.
   Type a family phone number that already exists and the child joins that family.
 
-Attendance, fees, notices and exams show "coming in December/January" for now.
+- **Attendance**: the whole school for any day (numbers per class, which classes haven't taken it,
+  absent children with their parent's phone and how often they've been absent), correcting a past day,
+  and the **monthly register** (every child, every day, totals and %, below 75% highlighted), printable on A4.
+
+Fees, notices and exams show "coming in December/January" for now.
 
 The website keeps logins in secure cookies that page code can't read, and every screen only shows what that person's roles allow.
 

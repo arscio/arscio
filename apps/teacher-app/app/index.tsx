@@ -98,6 +98,14 @@ export default function Home() {
       })}
 
       <Button kind="plain" label="Take attendance for another class" onPress={() => router.push('/other-class')} style={{ marginTop: 6 }} />
+
+      <View style={{ marginTop: 18, gap: 10 }}>
+        <T bold size={20}>Homework</T>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button label="Give homework" onPress={() => router.push('/homework/new')} style={{ flex: 1 }} />
+          <Button kind="plain" label="Homework I gave" onPress={() => router.push('/homework')} style={{ flex: 1 }} />
+        </View>
+      </View>
     </ScrollView>
   );
 }

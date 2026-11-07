@@ -14,6 +14,8 @@ import { can, makeGuards, must, schoolTx } from './context.js';
 import { cancelReceipt, createReceipt, studentDues } from './fees/service.js';
 import { registerSetupRoutes } from './routes/setup.js';
 import { registerAttendanceRoutes } from './routes/attendance.js';
+import { registerAttendanceReportRoutes } from './routes/attendance-reports.js';
+import { registerHomeworkRoutes } from './routes/homework.js';
 import cors from '@fastify/cors';
 
 export interface AppDeps {
@@ -313,6 +315,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   registerSetupRoutes(app, db, requireSchool);
   registerAttendanceRoutes(app, db, requireSchool);
+  registerAttendanceReportRoutes(app, db, requireSchool);
+  registerHomeworkRoutes(app, db, requireSchool);
 
   return app;
 }

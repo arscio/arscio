@@ -102,6 +102,7 @@ export function api(env: TestEnv, token: string, schoolId?: string) {
     post: (url: string, payload?: object) => env.app.inject({ method: 'POST', url, headers, payload: payload ?? {} }),
     put: (url: string, payload?: object) => env.app.inject({ method: 'PUT', url, headers, payload: payload ?? {} }),
     patch: (url: string, payload?: object) => env.app.inject({ method: 'PATCH', url, headers, payload: payload ?? {} }),
+    del: (url: string) => env.app.inject({ method: 'DELETE', url, headers }),
   };
 }
 

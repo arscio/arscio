@@ -18,12 +18,17 @@
 - ✅ Once-a-day and every-period attendance; covering another class; "Absent today" messages queued for parents
 - ✅ 55 automatic checks passing; app clicked through at phone size against the real server
 
+## Done (7 Nov 2026, later)
+- ✅ Homework in the teacher app; one message per family
+- ✅ Website attendance: school-wide day view, absent list with phone numbers, correcting past days, printable monthly register
+- ✅ 64 automatic checks passing
+
 ## Building, two weeks at a time
 
 | When | What gets built |
 |---|---|
 | 7 – 20 Nov | ~~Admin website shell + login, setup screens~~ (done early). Next: timetable/periods, and Excel import once the school's file arrives. |
-| 21 Nov – 4 Dec | ~~Teacher app + attendance~~ (done early). Next: homework in the teacher app, attendance reports on the website, staff attendance. |
+| 21 Nov – 4 Dec | ~~Teacher app, attendance, homework, attendance reports~~ (done early). Next: fees (moved up from December). Staff attendance still to do. |
 | 5 – 18 Dec | Fees: fee structure screens, generating dues, counter collection, **printable receipt PDF**, concessions, defaulters list. |
 | 19 Dec – 1 Jan | Notices with app notifications. **Parent app** first version: children, attendance, fees due & receipts, notices, homework. |
 | 2 – 15 Jan | Exams, weightage, marks/grades entry in teacher app, **report card design + PDF**. |

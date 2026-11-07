@@ -26,6 +26,8 @@ export default function RootLayout() {
           <Stack.Screen name="other-class" options={{ title: 'Another class' }} />
           <Stack.Screen name="attendance/[sectionId]" options={{ title: 'Attendance' }} />
           <Stack.Screen name="account" options={{ title: 'My account' }} />
+          <Stack.Screen name="homework/index" options={{ title: 'Homework' }} />
+          <Stack.Screen name="homework/new" options={{ title: 'Give homework' }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

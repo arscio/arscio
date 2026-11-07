@@ -29,7 +29,7 @@ const NAV: { group?: string; items: NavItem[] }[] = [
     group: 'Daily work',
     items: [
       { href: '/students', label: 'Students', perm: 'students.view' },
-      { href: '/attendance', label: 'Attendance', perm: 'attendance.view_all', soon: 'Dec' },
+      { href: '/attendance', label: 'Attendance', perm: 'attendance.view_all' },
       { href: '/fees', label: 'Fees & receipts', perm: 'fees.collect', soon: 'Dec' },
       { href: '/notices', label: 'Notices', perm: 'notices.publish', soon: 'Dec' },
       { href: '/exams', label: 'Exams & report cards', perm: 'reportcards.manage', soon: 'Jan' },

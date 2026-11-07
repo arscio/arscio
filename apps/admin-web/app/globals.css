@@ -206,3 +206,37 @@ dialog.panel[open] { animation: slide-in .18s ease-out; }
   .login-art p { margin-left: 32px; }
   .login-form { padding: 28px 24px; }
 }
+
+/* ---------- Attendance ---------- */
+.stats { display: flex; flex-wrap: wrap; gap: 28px 44px; }
+.stats > div { display: flex; flex-direction: column; }
+.stat-num { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: var(--r-sm); overflow: hidden; }
+.seg button { font: inherit; font-weight: 700; font-size: 0.875rem; border: 0; border-left: 1px solid var(--rule); background: #fff; color: var(--ink-soft); padding: 6px 10px; cursor: pointer; min-width: 38px; }
+.seg button:first-child { border-left: 0; }
+.seg button.on[data-v='present'] { background: var(--board); color: #fff; }
+.seg button.on[data-v='absent'] { background: var(--red-ink); color: #fff; }
+.seg button.on[data-v='late'] { background: var(--ink); color: #fff; }
+.seg button.on[data-v='leave'] { background: var(--marigold); color: #fff; }
+
+/* Monthly register grid */
+.month-grid { border-collapse: collapse; font-size: 0.8125rem; width: 100%; }
+.month-grid th, .month-grid td { border: 1px solid var(--rule); padding: 4px 3px; text-align: center; font-variant-numeric: tabular-nums; }
+.month-grid th { background: #fafbfb; font-weight: 700; color: var(--ink-soft); }
+.month-grid td.name, .month-grid th.name { text-align: left; padding: 4px 8px; white-space: nowrap; border-right: 2px solid color-mix(in srgb, var(--margin) 45%, transparent); }
+.month-grid td.off, .month-grid th.off { background: #f2f4f5; color: #b3bcc6; }
+.month-grid td.a { color: var(--red-ink); font-weight: 700; background: var(--red-wash); }
+.month-grid td.l { color: #7a520a; background: var(--marigold-wash); }
+.month-grid td.low { background: var(--marigold-wash); font-weight: 700; }
+.print-only { display: none; }
+
+@media print {
+  .side, .menu-btn, .no-print, .toast { display: none !important; }
+  .frame { display: block; }
+  .main { padding: 0; max-width: none; }
+  body { background: #fff; }
+  .sheet { border: 0; }
+  .print-only { display: block; }
+  .month-grid { font-size: 9pt; }
+  @page { size: A4 landscape; margin: 10mm; }
+}
