@@ -51,6 +51,7 @@ promises. All 55 pass.
 You need: **Node.js 22**, **pnpm**, and **Docker Desktop**.
 
 ```bash
+echo "node-linker=hoisted" > .npmrc   # one-time: a setting the phone app needs
 pnpm install                       # download the building blocks
 pnpm db:up                         # start a database on your Mac
 cp .env.example apps/api/.env      # create your settings file (then edit JWT_SECRET)
