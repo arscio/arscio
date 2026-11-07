@@ -66,6 +66,16 @@ Store apps (teacher + parent). Proper foundation with separate data per school.
 - **Code lives in one folder ("monorepo")** so the server, website and apps always
   agree on the same rules.
 
+## Admin website (7 Nov 2026)
+
+- Excel import postponed (no file from the school yet); students can be added by hand meanwhile.
+- A family's phone number can't be changed from the student form, because it is the parents' login.
+  Changing it will be a separate, careful action later.
+- A teacher with only the Teacher role who opens the admin website is told to use the teacher app.
+- Look: "school register" style: ink-blue, ruled tables with a red margin line, green for main actions,
+  marigold for things that need attention. Typeface: Atkinson Hyperlegible, chosen for easy reading.
+- Staff who leave are made "inactive", never deleted, so their past records stay.
+
 ## Still open
 
 - Final product and company name.

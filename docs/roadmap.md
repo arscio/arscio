@@ -6,11 +6,18 @@
 - ✅ Fee receipts core: collect, number, cancel-with-reason, never delete
 - ✅ 35 automatic safety checks, all passing
 
+## Done (7 Nov 2026)
+- ✅ Admin website: login, school chooser, menu that follows each person's roles
+- ✅ Setup screens: school settings, subjects, classes & sections, class teachers, staff & roles
+- ✅ Students added by hand, families linked by one phone number, brothers/sisters grouped
+- ✅ 45 automatic checks passing; whole flow clicked through in a real browser, desktop and phone size
+- ⏸ Excel import postponed until the school's file is available
+
 ## Building, two weeks at a time
 
 | When | What gets built |
 |---|---|
-| 7 – 20 Nov | Admin website shell + login. Set up classes, sections, subjects, staff. **Excel import of students** (with a check screen showing errors before saving). |
+| 7 – 20 Nov | ~~Admin website shell + login, setup screens~~ (done early). Next: timetable/periods, and Excel import once the school's file arrives. |
 | 21 Nov – 4 Dec | Attendance (once-a-day or per-period) + staff attendance. **Teacher app** first version: login, today's classes, take attendance. |
 | 5 – 18 Dec | Fees: fee structure screens, generating dues, counter collection, **printable receipt PDF**, concessions, defaulters list. |
 | 19 Dec – 1 Jan | Notices with app notifications. **Parent app** first version: children, attendance, fees due & receipts, notices, homework. |

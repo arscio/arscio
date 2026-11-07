@@ -15,7 +15,7 @@ Target: ready February 2027 → staff test it next to paper in March → live in
 | `db/migrations/` | **The database design.** Every table, every rule. | ✅ Built and tested |
 | `apps/api/` | **The server** – the "brain" every app talks to. Handles logins, checks permissions, saves data. | ✅ Foundation built and tested |
 | `packages/shared/` | Rules shared by everything (role names, who can do what). | ✅ Built |
-| `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ⏳ Next |
+| `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ✅ Login + school setup screens built and tested |
 | `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ⏳ Later |
 | `apps/parent-app/` | **Parent app** (Play Store + App Store): all children, fees, notices, results. | ⏳ Later |
 | `docs/` | Decisions and the build plan. | 📄 |
@@ -32,8 +32,8 @@ Target: ready February 2027 → staff test it next to paper in March → live in
    Same for parents and teachers. 5 wrong passwords = 15-minute lock.
 4. **Every important change is written in an audit log that can't be edited.**
 
-There are 35 automatic checks (`apps/api/test/`) that try to break these
-promises. All 35 pass.
+There are 45 automatic checks (`apps/api/test/`) that try to break these
+promises. All 45 pass.
 
 ## Main building blocks (and why)
 
@@ -41,7 +41,7 @@ promises. All 35 pass.
 |---|---|---|
 | Database | **PostgreSQL** | Very reliable, free, available from every cloud provider; has the "sealed per school" feature built in. |
 | Server | **Node.js + TypeScript** | One language across server, website and apps, so it's simpler to maintain. |
-| Admin website | **Next.js** (planned) | Fast, standard, easy to host. |
+| Admin website | **Next.js** | Fast, standard, easy to host. |
 | Phone apps | **React Native with Expo** (planned) | One codebase builds real Android and iPhone apps for the Play Store and App Store. |
 | Passwords | **Argon2** scrambling | Passwords are never stored; even we can't read them. |
 | Money | Stored as exact amounts (paise) | No rounding errors in fees, ever. |
@@ -58,7 +58,26 @@ pnpm db:migrate                    # build the tables
 pnpm --filter @aiedu/api create-school -- --code DEMO --name "Demo Public School" \
      --owner-name "Zahid" --owner-phone 9876543210
 pnpm dev:api                       # start the server at http://localhost:4000
+cp apps/admin-web/.env.example apps/admin-web/.env.local
+pnpm dev:web                       # in a second window: the website at http://localhost:3000
 ```
+
+Open http://localhost:3000, type the owner's number, and use the code printed in the server window.
+
+## What the admin website can do today
+
+- **Log in** with mobile number: code by SMS the first time, then a password; "Forgot password" works.
+- **Home**: a checklist of the steps to get the school ready, ticking itself off as you go.
+- **School settings**: school details, attendance once a day or every period, online payment on/off.
+- **Subjects**: add the common CBSE subjects in one click each, or your own.
+- **Classes & sections**: add sections, choose the class teacher, pick subjects per class, choose report card style.
+- **Staff & roles**: add staff with one or more roles, make inactive, reset a forgotten login.
+- **Students**: add by hand (Excel import later), search, filter by class, edit, mark as left.
+  Type a family phone number that already exists and the child joins that family.
+
+Attendance, fees, notices and exams show "coming in December/January" for now.
+
+The website keeps logins in secure cookies that page code can't read, and every screen only shows what that person's roles allow.
 
 During development, login codes (OTPs) are printed in the server window instead of being sent by SMS.
 

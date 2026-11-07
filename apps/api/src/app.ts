@@ -12,6 +12,7 @@ import { Tokens } from './auth/tokens.js';
 import type { OtpSender } from './auth/otp-sender.js';
 import { can, makeGuards, must, schoolTx } from './context.js';
 import { cancelReceipt, createReceipt, studentDues } from './fees/service.js';
+import { registerSetupRoutes } from './routes/setup.js';
 
 export interface AppDeps {
   db: Db;
@@ -304,6 +305,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const { reason } = z.object({ reason: z.string() }).parse(req.body);
     return schoolTx(db, req, (tx) => cancelReceipt(tx, receiptId, reason, req.accountId!));
   });
+
+  registerSetupRoutes(app, db, requireSchool);
 
   return app;
 }
