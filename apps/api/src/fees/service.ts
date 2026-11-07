@@ -58,7 +58,16 @@ export async function studentDues(tx: Tx, studentId: string, onDate: string) {
       [studentId],
     )
   ).rows;
-  return rows.map((r) => ({
+  // The late fine is per INSTALMENT, not per fee type: suggest it once,
+  // on the first unpaid line of each late instalment.
+  const fineShown = new Set<string>();
+  return rows.map((r) => {
+    let suggestedFine = '0.00';
+    if (toPaise(r.balance) > 0 && !fineShown.has(r.instalment)) {
+      suggestedFine = lateFine(r, onDate);
+      fineShown.add(r.instalment);
+    }
+    return {
     feeDueId: r.fee_due_id,
     feeHead: r.fee_head,
     instalment: r.instalment,
@@ -67,8 +76,9 @@ export async function studentDues(tx: Tx, studentId: string, onDate: string) {
     concession: r.concession,
     paid: r.paid,
     balance: r.balance,
-    suggestedFine: toPaise(r.balance) > 0 ? lateFine(r, onDate) : '0.00',
-  }));
+    suggestedFine,
+  };
+  });
 }
 
 export async function createReceipt(tx: Tx, input: CreateReceiptInput, collectedBy: string) {

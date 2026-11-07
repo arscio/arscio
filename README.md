@@ -1,4 +1,4 @@
-# aiedu (working name)
+# AIEdu
 
 A school management platform: student records, attendance, fees and receipts,
 notices, report cards, a principal dashboard, and two phone apps (Teacher and Parent).
@@ -14,7 +14,8 @@ Target: ready February 2027 → staff test it next to paper in March → live in
 |---|---|---|
 | `db/migrations/` | **The database design.** Every table, every rule. | ✅ Built and tested |
 | `apps/api/` | **The server** – the "brain" every app talks to. Handles logins, checks permissions, saves data. | ✅ Foundation built and tested |
-| `packages/shared/` | Rules shared by everything (role names, who can do what). | ✅ Built |
+| `packages/shared/` | Rules shared by everything (role names, who can do what, rupees in words). | ✅ Built |
+| `packages/brand/` | The AIEdu logo, app icons, favicons and social images (from the design export). | ✅ |
 | `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ✅ Login + school setup screens built and tested |
 | `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ✅ Login, attendance, homework built and tested |
 | `apps/parent-app/` | **Parent app** (Play Store + App Store): all children, fees, notices, results. | ⏳ Later |
@@ -32,8 +33,8 @@ Target: ready February 2027 → staff test it next to paper in March → live in
    Same for parents and teachers. 5 wrong passwords = 15-minute lock.
 4. **Every important change is written in an audit log that can't be edited.**
 
-There are 64 automatic checks (`apps/api/test/`) that try to break these
-promises. All 64 pass.
+There are 78 automatic checks (`apps/api/test/`) that try to break these
+promises. All 78 pass.
 
 ## Main building blocks (and why)
 
@@ -80,7 +81,22 @@ Open http://localhost:3000, type the owner's number, and use the code printed in
   absent children with their parent's phone and how often they've been absent), correcting a past day,
   and the **monthly register** (every child, every day, totals and %, below 75% highlighted), printable on A4.
 
-Fees, notices and exams show "coming in December/January" for now.
+- **Fees & receipts**: fee setup in four steps (fee types, instalments with late-fine rules, amounts per class,
+  apply to students), collecting at the counter, a printable receipt (two copies on one A4, with the school's
+  logo and amount in words), concessions with reasons, cancelling with a reason, the day book with totals
+  by cash/UPI/cheque, and the defaulters list with phone numbers.
+- **School identity** (in School settings): logo, colour, short name, CBSE affiliation number.
+
+Notices and exams show "coming in December/January" for now.
+
+## Whose brand goes where
+
+| Who sees it | Brand |
+|---|---|
+| Admin website, teacher app (owner, principal, office, accountant, teachers) | **AIEdu** |
+| School's public website, parent app (and later student app) | **The school's** name and logo inside the app |
+| Receipts and report cards | **The school's** logo, name, colour; small "Powered by AIEdu" |
+| App store icons | AIEdu (one app serves every school) |
 
 The website keeps logins in secure cookies that page code can't read, and every screen only shows what that person's roles allow.
 

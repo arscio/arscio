@@ -1,12 +1,13 @@
 // Small building blocks for the teacher app screens.
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { C, F } from '@/lib/theme';
 
-export function T(props: { children: ReactNode; style?: TextStyle | TextStyle[]; bold?: boolean; soft?: boolean; size?: number; numberOfLines?: number }) {
+export function T(props: { children: ReactNode; style?: TextStyle | TextStyle[]; bold?: boolean; soft?: boolean; size?: number; numberOfLines?: number; display?: boolean }) {
   return (
     <Text numberOfLines={props.numberOfLines} style={[
-      { fontFamily: props.bold ? F.bold : F.regular, color: props.soft ? C.inkSoft : C.ink, fontSize: props.size ?? 16, lineHeight: (props.size ?? 16) * 1.4 },
+      { fontFamily: props.display ? F.display : props.bold ? F.bold : F.regular, letterSpacing: props.display ? -0.3 : 0, color: props.soft ? C.inkSoft : C.ink, fontSize: props.size ?? 16, lineHeight: (props.size ?? 16) * 1.4 },
       props.style as TextStyle,
     ]}>{props.children}</Text>
   );
@@ -82,3 +83,19 @@ const s = StyleSheet.create({
   error: { borderLeftWidth: 4, borderLeftColor: C.red, backgroundColor: C.redWash, padding: 12, borderRadius: 4 },
   card: { backgroundColor: C.sheet, borderRadius: 10, borderWidth: 1, borderColor: C.rule, padding: 16 },
 });
+
+/** The AIEdu sprout mark and wordmark. */
+export function Logo({ size = 28, onDark = false }: { size?: number; onDark?: boolean }) {
+  const green = onDark ? C.bright : C.board;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: size * 0.3 }} accessibilityLabel="AIEdu">
+      <Svg width={size} height={size} viewBox="0 0 100 100">
+        <Path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" fill={green} stroke={green} strokeWidth={7} strokeLinejoin="round" />
+        <Path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill={C.gold} />
+      </Svg>
+      <Text style={{ fontFamily: F.displayHeavy, fontSize: size * 0.82, letterSpacing: -0.8, lineHeight: size }}>
+        <Text style={{ color: green }}>AI</Text><Text style={{ color: onDark ? '#fff' : C.ink }}>Edu</Text>
+      </Text>
+    </View>
+  );
+}

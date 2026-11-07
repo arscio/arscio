@@ -23,13 +23,19 @@
 - ✅ Website attendance: school-wide day view, absent list with phone numbers, correcting past days, printable monthly register
 - ✅ 64 automatic checks passing
 
+## Done (7 Nov 2026, evening)
+- ✅ AIEdu brand applied to the website and teacher app (logo, colours, fonts, icons)
+- ✅ School identity: logo, colour, short name, affiliation number
+- ✅ Fees & receipts: setup, collection, printable receipts, concessions, cancelling, day book, defaulters
+- ✅ 78 automatic checks passing; whole fee flow clicked through in a browser
+
 ## Building, two weeks at a time
 
 | When | What gets built |
 |---|---|
 | 7 – 20 Nov | ~~Admin website shell + login, setup screens~~ (done early). Next: timetable/periods, and Excel import once the school's file arrives. |
-| 21 Nov – 4 Dec | ~~Teacher app, attendance, homework, attendance reports~~ (done early). Next: fees (moved up from December). Staff attendance still to do. |
-| 5 – 18 Dec | Fees: fee structure screens, generating dues, counter collection, **printable receipt PDF**, concessions, defaulters list. |
+| 21 Nov – 4 Dec | ~~Teacher app, attendance, homework, attendance reports~~ (done early). Next: notices with app notifications, then the parent app. Staff attendance still to do. |
+| 5 – 18 Dec | ~~Fees~~ (done early, 7 Nov). |
 | 19 Dec – 1 Jan | Notices with app notifications. **Parent app** first version: children, attendance, fees due & receipts, notices, homework. |
 | 2 – 15 Jan | Exams, weightage, marks/grades entry in teacher app, **report card design + PDF**. |
 | 16 – 22 Jan | **Principal dashboard.** Online payment (Razorpay) in test mode. |

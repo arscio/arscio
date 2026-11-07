@@ -82,3 +82,41 @@ export function normalizeIndianPhone(input: string): string | null {
     : digits;
   return /^[6-9]\d{9}$/.test(ten) ? `+91${ten}` : null;
 }
+
+const ONES = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve',
+  'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+function twoDigits(n: number): string {
+  if (n < 20) return ONES[n]!;
+  return `${TENS[Math.floor(n / 10)]}${n % 10 ? ` ${ONES[n % 10]}` : ''}`;
+}
+function threeDigits(n: number): string {
+  const h = Math.floor(n / 100), r = n % 100;
+  return [h ? `${ONES[h]} Hundred` : '', r ? twoDigits(r) : ''].filter(Boolean).join(' ');
+}
+
+/** Indian style: 125050.50 -> "Rupees One Lakh Twenty Five Thousand Fifty and Fifty Paise Only". */
+export function rupeesInWords(amount: string | number): string {
+  const [r = '0', p = '0'] = String(amount).split('.');
+  let n = Number(r);
+  const paise = Number(p.padEnd(2, '0').slice(0, 2));
+  if (n === 0 && paise === 0) return 'Rupees Zero Only';
+  const parts: string[] = [];
+  const crore = Math.floor(n / 1_00_00_000); n %= 1_00_00_000;
+  const lakh = Math.floor(n / 1_00_000); n %= 1_00_000;
+  const thousand = Math.floor(n / 1000); n %= 1000;
+  if (crore) parts.push(`${threeDigits(crore)} Crore`);
+  if (lakh) parts.push(`${twoDigits(lakh)} Lakh`);
+  if (thousand) parts.push(`${twoDigits(thousand)} Thousand`);
+  if (n) parts.push(threeDigits(n));
+  const rupees = parts.length ? `Rupees ${parts.join(' ')}` : 'Rupees Zero';
+  return `${rupees}${paise ? ` and ${twoDigits(paise)} Paise` : ''} Only`;
+}
+
+/** Indian digit grouping: 125050.5 -> "1,25,050.50" */
+export function formatINR(amount: string | number): string {
+  const [r = '0', p = '00'] = Number(amount).toFixed(2).split('.');
+  const last3 = r.slice(-3), rest = r.slice(0, -3);
+  return `${rest ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' : ''}${last3}.${p}`;
+}

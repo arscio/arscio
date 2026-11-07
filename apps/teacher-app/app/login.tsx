@@ -7,7 +7,7 @@ import { normalizeIndianPhone } from '@aiedu/shared';
 import { ApiError, authStep } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { C } from '@/lib/theme';
-import { Button, ErrorText, Input, T } from '@/components/ui';
+import { Button, ErrorText, Input, Logo, T } from '@/components/ui';
 
 type Step = 'phone' | 'password' | 'otp' | 'new-password';
 
@@ -46,13 +46,13 @@ export default function Login() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={['top']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.art}>
-          <View style={s.margin} />
-          <T bold size={28} style={{ color: '#fff' }}>aiedu Teacher</T>
-          <T size={15} style={{ color: '#c9d1e4', marginTop: 4 }}>Attendance, homework and marks.</T>
+          <Logo size={34} onDark />
+          <T display size={20} style={{ color: '#fff', marginTop: 18 }}>Teacher</T>
+          <T size={15} style={{ color: '#B5CCC1', marginTop: 2 }}>Attendance, homework and marks.</T>
         </View>
         <ScrollView style={s.sheet} contentContainerStyle={{ padding: 24, gap: 18 }} keyboardShouldPersistTaps="handled">
           {step === 'phone' && (<>
-            <View><T bold size={22}>Log in</T><T soft>Use the mobile number the school has for you.</T></View>
+            <View><T display size={22}>Log in</T><T soft>Use the mobile number the school has for you.</T></View>
             <Input label="Mobile number" prefix="+91" keyboardType="number-pad" maxLength={10} autoFocus
               placeholder="10-digit number" value={phone} onChangeText={(v) => setPhone(v.replace(/\D/g, ''))}
               textContentType="telephoneNumber" autoComplete="tel" />
@@ -61,7 +61,7 @@ export default function Login() {
           </>)}
 
           {step === 'password' && (<>
-            <View><T bold size={22}>Enter your password</T><T soft>For +91 {phone}</T></View>
+            <View><T display size={22}>Enter your password</T><T soft>For +91 {phone}</T></View>
             <Input label="Password" secureTextEntry autoFocus value={password} onChangeText={setPassword}
               textContentType="password" autoComplete="current-password" onSubmitEditing={() => password && run(async () => {
                 await authStep('login', { phone, password, device: 'Teacher app' }); await afterLogin();
@@ -76,7 +76,7 @@ export default function Login() {
           </>)}
 
           {step === 'otp' && (<>
-            <View><T bold size={22}>Enter the code</T><T soft>{info}</T></View>
+            <View><T display size={22}>Enter the code</T><T soft>{info}</T></View>
             <Input label="6-digit code" keyboardType="number-pad" maxLength={6} autoFocus value={code}
               onChangeText={(v) => setCode(v.replace(/\D/g, ''))} textContentType="oneTimeCode" autoComplete="sms-otp"
               style={{ fontSize: 26, letterSpacing: 10, textAlign: 'center' }} hint="The code works for 5 minutes." />
@@ -97,7 +97,7 @@ export default function Login() {
 
           {step === 'new-password' && (<>
             <View>
-              <T bold size={22}>{reset ? 'Choose a new password' : 'Create your password'}</T>
+              <T display size={22}>{reset ? 'Choose a new password' : 'Create your password'}</T>
               <T soft>Use it with your mobile number from now on, here and on the school website.</T>
             </View>
             <Input label="New password" secureTextEntry autoFocus value={pw1} onChangeText={setPw1}
@@ -119,8 +119,7 @@ export default function Login() {
 }
 
 const s = StyleSheet.create({
-  art: { paddingHorizontal: 24, paddingLeft: 44, paddingTop: 36, paddingBottom: 28, backgroundColor: C.ink },
-  margin: { position: 'absolute', left: 24, top: 0, bottom: 0, width: 2, backgroundColor: 'rgba(217,83,79,.55)' },
+  art: { paddingHorizontal: 24, paddingTop: 36, paddingBottom: 28, backgroundColor: C.ink },
   sheet: { flex: 1, backgroundColor: C.sheet, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   row: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' },
 });

@@ -14,6 +14,7 @@ export default function SettingsPage() {
       <div className="page-head"><div><h1>School settings</h1><p>Only the owner and principal can change these.</p></div></div>
       <div className="stack" style={{ gap: 22, maxWidth: 760 }}>
         <Profile key={`p-${s.name}${s.address}${s.phone}${s.email}`} onSaved={async () => { await reload(); toast.show('School details saved'); }} />
+        <Identity key={`i-${s.logo_url}${s.brand_color}${s.short_name}${s.affiliation_no}`} onSaved={async (m) => { await reload(); toast.show(m); }} />
         <Attendance key={`a-${s.attendance_mode}${s.periods_per_day}`} onSaved={async () => { await reload(); toast.show('Attendance setting saved'); }} />
         <Payments key={`o-${s.online_payments_enabled}`} onSaved={async (on) => { await reload(); toast.show(on ? 'Online payment is ON' : 'Online payment is OFF'); }} />
       </div>
@@ -122,6 +123,78 @@ function Payments({ onSaved }: { onSaved: (on: boolean) => Promise<void> }) {
             })}>Turn on online payment</button>
         )}
       </div>
+    </div>
+  );
+}
+
+const COLOURS = ['#0E7C5F', '#1F4E9A', '#7A1F3D', '#B54708', '#5B2A86', '#0B6E99', '#9A1F1F', '#2F3B4C'];
+
+function Identity({ onSaved }: { onSaved: (m: string) => Promise<void> }) {
+  const { info } = useSchool();
+  const s = info.school;
+  const [color, setColor] = useState(s.brand_color ?? '');
+  const [shortName, setShortName] = useState(s.short_name ?? '');
+  const [aff, setAff] = useState(s.affiliation_no ?? '');
+  const { busy, error, run } = useSave();
+
+  const upload = (file: File) => run(async () => {
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) throw new ApiError(400, 'bad', 'Choose a PNG, JPG or WebP picture');
+    if (file.size > 300 * 1024) throw new ApiError(400, 'big', 'The logo is too large. Please use a picture under 300 KB.');
+    const dataUrl = await new Promise<string>((res, rej) => {
+      const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(r.error); r.readAsDataURL(file);
+    });
+    await api.put('/school/logo', { dataUrl });
+    await onSaved('Logo saved');
+  });
+
+  return (
+    <div className="sheet sheet-pad stack">
+      <div>
+        <h2>School identity</h2>
+        <p className="muted small" style={{ marginTop: 4 }}>
+          Your logo and colour appear on what families see: the school website, the parent app, receipts and report cards.
+          Staff screens like this one use the AIEdu look.
+        </p>
+      </div>
+      <div className="row" style={{ gap: 18, alignItems: 'center' }}>
+        <div style={{ width: 88, height: 88, border: '1px dashed var(--rule-strong)', borderRadius: 8, display: 'grid', placeItems: 'center', background: '#fff' }}>
+          {s.logo_url ? <img src={`/api/school-logo/${s.id}?${encodeURIComponent(s.logo_url)}`} alt="School logo" style={{ maxWidth: 80, maxHeight: 80 }} />
+            : <span className="small muted">No logo</span>}
+        </div>
+        <div className="stack" style={{ gap: 8 }}>
+          <label className="btn btn-plain" style={{ cursor: 'pointer' }}>
+            {s.logo_url ? 'Change logo' : 'Upload logo'}
+            <input type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={busy}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); e.target.value = ''; }} />
+          </label>
+          <span className="small muted">PNG, JPG or WebP, under 300 KB. A square picture works best.</span>
+          {s.logo_url ? <button className="btn btn-quiet" style={{ alignSelf: 'flex-start' }} disabled={busy}
+            onClick={() => confirm('Remove the logo?') && run(async () => { await api.del('/school/logo'); await onSaved('Logo removed'); })}>Remove logo</button> : null}
+        </div>
+      </div>
+      <div className="field">
+        <span className="label">School colour</span>
+        <div className="row">
+          {COLOURS.map((c) => (
+            <button key={c} type="button" aria-label={`Colour ${c}`} aria-pressed={color.toLowerCase() === c.toLowerCase()} onClick={() => setColor(c)}
+              style={{ width: 34, height: 34, borderRadius: 999, background: c, border: color.toLowerCase() === c.toLowerCase() ? '3px solid var(--ink)' : '3px solid #fff', boxShadow: '0 0 0 1px var(--rule-strong)', cursor: 'pointer' }} />
+          ))}
+          <input type="color" aria-label="Other colour" value={color || '#0E7C5F'} onChange={(e) => setColor(e.target.value)} style={{ width: 44, height: 34, border: 0, background: 'none' }} />
+        </div>
+      </div>
+      <div className="grid-2">
+        <Field label="Short name" htmlFor="sh" hint="Shown where space is tight, for example GVPS">
+          <input id="sh" className="input" maxLength={20} value={shortName} onChange={(e) => setShortName(e.target.value)} />
+        </Field>
+        <Field label="CBSE affiliation number" htmlFor="af" hint="Printed on receipts and report cards">
+          <input id="af" className="input" maxLength={30} value={aff} onChange={(e) => setAff(e.target.value)} />
+        </Field>
+      </div>
+      <ErrorBox error={error} />
+      <div><button className="btn btn-primary" disabled={busy} onClick={() => run(async () => {
+        await api.patch('/school/identity', { brandColor: color || null, shortName, affiliationNo: aff });
+        await onSaved('School identity saved');
+      })}>Save school identity</button></div>
     </div>
   );
 }

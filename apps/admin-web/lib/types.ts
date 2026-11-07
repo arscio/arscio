@@ -7,6 +7,7 @@ export interface SchoolInfo {
     logo_url: string | null; website_domain: string | null;
     attendance_mode: 'daily' | 'period'; periods_per_day: number;
     online_payments_enabled: boolean; receipt_prefix: string;
+    brand_color: string | null; short_name: string | null; affiliation_no: string | null;
   };
   me: { roles: Role[]; permissions: Permission[] };
 }

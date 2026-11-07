@@ -1,4 +1,4 @@
-// How the app talks to the aiedu server.
+// How the app talks to the AIEdu server.
 //
 // Login tickets: the long-lived "stay logged in" ticket is kept in the phone's
 // secure storage (Keychain on iPhone, Keystore on Android). The short-lived

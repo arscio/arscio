@@ -12,7 +12,7 @@ export default function Account() {
   return (
     <View style={{ padding: 16, gap: 12 }}>
       <Card style={{ gap: 4 }}>
-        <T bold size={20}>{state.me.account.name}</T>
+        <T display size={20}>{state.me.account.name}</T>
         <T soft>{state.me.account.phone.replace(/^\+91(\d{5})(\d{5})$/, '+91 $1 $2')}</T>
         <T soft>{school?.name}</T>
       </Card>

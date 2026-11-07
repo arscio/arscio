@@ -1,26 +1,29 @@
-// Same look as the admin website: ink-blue, chalkboard green, marigold for
-// "still to do", red only for absent/errors.
+// AIEdu brand ("Sprout A"): Forest frame, Emerald actions, Signal Gold for
+// "still to do", red only for absent/errors. Same as the admin website.
 export const C = {
-  ink: '#1d2b4f',
-  inkSoft: '#4a5775',
-  paper: '#f3f5f4',
+  ink: '#0B2A22',        // Forest
+  inkSoft: '#4B6158',
+  paper: '#F3F8F5',      // Mist
   sheet: '#ffffff',
-  rule: '#dbe2e6',
-  ruleStrong: '#bfcad1',
-  margin: '#e8a3a1',
-  board: '#2e5b4f',
-  boardDeep: '#234639',
-  boardWash: '#e7efec',
-  marigold: '#c98a12',
-  marigoldWash: '#fbf1dc',
-  red: '#a8322b',
-  redWash: '#fbeceb',
-  lateWash: '#eef1f8',
+  rule: '#DCE7E1',
+  ruleStrong: '#BCCFC5',
+  margin: '#F5C94D',     // gold margin line
+  board: '#0E7C5F',      // Emerald
+  boardDeep: '#0A6149',
+  boardWash: '#E3EFE8',  // Mint
+  bright: '#19B984',     // Bright Emerald
+  gold: '#F5B700',       // Signal Gold
+  marigold: '#B98700',
+  marigoldWash: '#FFF4CC',
+  red: '#B42318',
+  redWash: '#FDECEA',
 };
 
 export const F = {
-  regular: 'AtkinsonHyperlegible_400Regular',
-  bold: 'AtkinsonHyperlegible_700Bold',
+  regular: 'Manrope_500Medium',
+  bold: 'Manrope_700Bold',
+  display: 'Sora_700Bold',
+  displayHeavy: 'Sora_800ExtraBold',
 };
 
 export const classLabel = (name: string) => (/^\d+$/.test(name) ? `Class ${name}` : name);

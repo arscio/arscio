@@ -61,7 +61,7 @@ export default function NewHomework() {
     return (
       <View style={{ padding: 16, gap: 14 }}>
         <Card style={{ gap: 8, borderLeftWidth: 4, borderLeftColor: C.board }}>
-          <T bold size={22}>Homework sent</T>
+          <T display size={22}>Homework sent</T>
           <T size={17}>{label}: {title}</T>
           <T soft>{sent > 0 ? `${sent} ${sent === 1 ? 'family' : 'families'} will see it in the parent app.` : 'No parents in this class use the app yet.'}</T>
         </Card>

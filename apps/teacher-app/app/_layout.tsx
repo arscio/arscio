@@ -1,4 +1,5 @@
-import { AtkinsonHyperlegible_400Regular, AtkinsonHyperlegible_700Bold, useFonts } from '@expo-google-fonts/atkinson-hyperlegible';
+import { Manrope_500Medium, Manrope_700Bold, useFonts } from '@expo-google-fonts/manrope';
+import { Sora_700Bold, Sora_800ExtraBold } from '@expo-google-fonts/sora';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,7 +8,7 @@ import { C, F } from '@/lib/theme';
 import { Loading } from '@/components/ui';
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ AtkinsonHyperlegible_400Regular, AtkinsonHyperlegible_700Bold });
+  const [fontsLoaded] = useFonts({ Manrope_500Medium, Manrope_700Bold, Sora_700Bold, Sora_800ExtraBold });
   if (!fontsLoaded) return <Loading />;
   return (
     <SafeAreaProvider>
@@ -17,7 +18,7 @@ export default function RootLayout() {
           screenOptions={{
             headerStyle: { backgroundColor: C.ink },
             headerTintColor: '#fff',
-            headerTitleStyle: { fontFamily: F.bold },
+            headerTitleStyle: { fontFamily: F.display },
             contentStyle: { backgroundColor: C.paper },
           }}>
           <Stack.Screen name="index" options={{ title: 'Today' }} />

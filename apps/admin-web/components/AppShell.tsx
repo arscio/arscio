@@ -8,6 +8,7 @@ import { ROLE_LABELS, type Permission } from '@aiedu/shared';
 import { ApiError, api, auth } from '@/lib/api';
 import type { Me, SchoolInfo } from '@/lib/types';
 import { Loading } from './ui';
+import { Logo } from './Logo';
 
 interface Ctx {
   info: SchoolInfo;
@@ -30,7 +31,7 @@ const NAV: { group?: string; items: NavItem[] }[] = [
     items: [
       { href: '/students', label: 'Students', perm: 'students.view' },
       { href: '/attendance', label: 'Attendance', perm: 'attendance.view_all' },
-      { href: '/fees', label: 'Fees & receipts', perm: 'fees.collect', soon: 'Dec' },
+      { href: '/fees', label: 'Fees & receipts', perm: 'fees.collect' },
       { href: '/notices', label: 'Notices', perm: 'notices.publish', soon: 'Dec' },
       { href: '/exams', label: 'Exams & report cards', perm: 'reportcards.manage', soon: 'Jan' },
     ],
@@ -73,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <SchoolCtx.Provider value={{ ...state, can, reload: load }}>
       <div className="frame">
         <nav className="side" data-open={menuOpen} aria-label="Main menu">
+          <div className="side-brand"><Logo size={26} onDark /></div>
           <div className="side-school">
             <strong>{state.info.school.name}</strong>
             <span>{state.info.school.board}</span>
@@ -95,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
           <div className="side-foot">
             <div><strong>{state.me.account.name}</strong></div>
-            <div style={{ color: '#aeb8cf' }}>{state.info.me.roles.map((r) => ROLE_LABELS[r]).join(', ')}</div>
+            <div style={{ color: '#9DB7AC' }}>{state.info.me.roles.map((r) => ROLE_LABELS[r]).join(', ')}</div>
             {multiSchool ? <button onClick={() => router.push('/choose-school')}>Switch school</button> : null}
             <br />
             <button onClick={async () => { await auth.logout(); router.replace('/login'); }}>Log out</button>

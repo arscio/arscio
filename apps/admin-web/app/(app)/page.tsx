@@ -26,7 +26,7 @@ export default function Home() {
     return (
       <div className="sheet empty">
         <h3>Hello, {me.account.name}</h3>
-        <p>Attendance, homework and marks are done in the aiedu teacher app, with the same number and password.</p>
+        <p>Attendance, homework and marks are done in the AIEdu teacher app, with the same number and password.</p>
       </div>
     );
   }

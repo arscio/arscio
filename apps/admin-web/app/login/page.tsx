@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { ApiError, auth } from '@/lib/api';
 import { ErrorBox, Field, PhoneInput } from '@/components/ui';
+import { Logo } from '@/components/Logo';
 
 type Step = 'phone' | 'password' | 'otp' | 'new-password';
 
@@ -73,9 +74,16 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
-      <section className="login-art" aria-hidden>
-        <h1>The school office, in one place.</h1>
-        <p>Students, attendance, fees, notices and report cards for your school.</p>
+      <section className="login-art">
+        <Logo size={34} onDark />
+        <svg className="big-mark" width="460" height="460" viewBox="0 0 100 100" aria-hidden>
+          <path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" fill="#12493B" stroke="#12493B" strokeWidth="7" strokeLinejoin="round" />
+          <path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F5B700" />
+        </svg>
+        <div>
+          <h1>The school office, in one place.</h1>
+          <p>Students, attendance, fees, notices and report cards, for owners, principals and office staff.</p>
+        </div>
       </section>
 
       <section className="login-form">

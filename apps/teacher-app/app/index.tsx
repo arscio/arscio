@@ -62,7 +62,7 @@ export default function Home() {
       {header}
       <View style={{ marginBottom: 4 }}>
         <T soft size={14}>{school?.name}</T>
-        <T bold size={24}>{longDate(data.date)}</T>
+        <T display size={24}>{longDate(data.date)}</T>
         <T soft>{data.mode === 'daily'
           ? (data.sections.length === 0 ? '' : todo === 0 ? 'Attendance is done for your classes.' : `Attendance to take: ${todo} ${todo === 1 ? 'class' : 'classes'}.`)
           : `Attendance is taken every period (${data.periodsPerDay} periods).`}</T>
@@ -83,7 +83,7 @@ export default function Home() {
             style={{ gap: 8, borderLeftWidth: 4, borderLeftColor: (data.mode === 'daily' ? day : periodsDone.length) ? C.board : C.marigold }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
               <View style={{ flex: 1 }}>
-                <T bold size={20}>{classLabel(s.className)} {s.sectionName}</T>
+                <T display size={20}>{classLabel(s.className)} {s.sectionName}</T>
                 <T soft size={14}>
                   {[s.isClassTeacher ? 'Class teacher' : null, s.subjects.map((x) => x.name).join(', ') || null, `${s.studentCount} students`].filter(Boolean).join('  |  ')}
                 </T>
@@ -100,7 +100,7 @@ export default function Home() {
       <Button kind="plain" label="Take attendance for another class" onPress={() => router.push('/other-class')} style={{ marginTop: 6 }} />
 
       <View style={{ marginTop: 18, gap: 10 }}>
-        <T bold size={20}>Homework</T>
+        <T display size={20}>Homework</T>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Button label="Give homework" onPress={() => router.push('/homework/new')} style={{ flex: 1 }} />
           <Button kind="plain" label="Homework I gave" onPress={() => router.push('/homework')} style={{ flex: 1 }} />

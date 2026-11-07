@@ -97,6 +97,29 @@ Store apps (teacher + parent). Proper foundation with separate data per school.
   Percentage = present ÷ (present + absent). Below 75% is highlighted (CBSE's board exam requirement).
 - The office/principal can correct attendance for past days on the website; their name is saved with the change.
 
+## Brand and school identity (7 Nov 2026)
+
+- Product name: **AIEdu**. Brand "Sprout A": Emerald #0E7C5F, Forest #0B2A22, Signal Gold #F5B700,
+  Bright Emerald #19B984, Mint #E3EFE8, Mist #F3F8F5. Fonts: Sora (headings), Manrope (text).
+- Everyone who works in the system (admin website, teacher app) sees **AIEdu**.
+- Only what families see carries the **school's identity**: the school's public website, the parent app and later
+  the student app (school name and logo inside), and receipts/report cards (school logo, name, colour,
+  affiliation number, with a small "Powered by AIEdu"). *Assumed for receipts/report cards; tell me if different.*
+- Store icons stay AIEdu: Teacher app = emerald icon, Parent app = gold icon (from the design export).
+- School logos: PNG, JPG or WebP under 300 KB. SVG is refused because it can carry hidden scripts.
+
+## Fees (7 Nov 2026)
+
+- Setup is four steps: fee types, instalments (due date, grace days, late fine: none / once / per day with a maximum),
+  amount per class per instalment, then "apply fees to students" (safe to repeat; only adds what's missing).
+- Changing fees later only changes lines nobody has paid towards yet, and only if the box is ticked.
+- **Late fine is per instalment, not per fee type.** The counter is shown the suggested fine and can reduce or waive it.
+- Concessions: percent or rupees, on one fee type or all, always with a reason and who gave it.
+  A concession never reduces a line below what's already been paid.
+- Receipts: two copies on one A4 (parent's copy and office copy), amount in words in Indian style (lakh/crore).
+- Defaulters = anything past its due date plus grace days, biggest amounts first.
+- Fines are recorded on receipts but are not part of the "year billed / year collected" fee totals.
+
 ## Still open
 
 - Final product and company name.

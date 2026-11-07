@@ -70,7 +70,7 @@ export default function MonthlyRegister() {
 
       {!sectionId ? <div className="sheet empty"><h3>No sections yet</h3><p>Add sections on the Classes page.</p></div>
         : !r || loading ? <Loading /> : (
-        <div className="sheet sheet-pad">
+        <div className="sheet sheet-pad print-wide">
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
               <div className="print-only"><strong>{info.school.name}</strong></div>

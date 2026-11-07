@@ -90,7 +90,7 @@ export default function AttendanceScreen() {
       <View style={{ padding: 16, gap: 14 }}>
         <Stack.Screen options={{ title }} />
         <Card style={{ gap: 8, borderLeftWidth: 4, borderLeftColor: C.board }}>
-          <T bold size={22}>Attendance saved</T>
+          <T display size={22}>Attendance saved</T>
           <T size={17}>{title}{sheet.period ? `, period ${sheet.period}` : ''}: {done.present} present, {done.absent} absent{done.leave ? `, ${done.leave} on leave` : ''}.</T>
           {done.parentAlerts > 0
             ? <T soft>The parents of {done.parentAlerts} absent {done.parentAlerts === 1 ? 'child' : 'children'} will get a message in the parent app.</T>
@@ -113,7 +113,7 @@ export default function AttendanceScreen() {
           <View style={{ padding: 16, gap: 12 }}>
             <View>
               <T soft size={14}>{longDate(sheet.date)}</T>
-              <T bold size={22}>{title}</T>
+              <T display size={22}>{title}</T>
               {sheet.session
                 ? <T soft size={14}>Taken by {sheet.session.takenBy} at {new Date(sheet.session.takenAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}. You can still change it today.</T>
                 : null}

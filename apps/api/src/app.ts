@@ -16,6 +16,8 @@ import { registerSetupRoutes } from './routes/setup.js';
 import { registerAttendanceRoutes } from './routes/attendance.js';
 import { registerAttendanceReportRoutes } from './routes/attendance-reports.js';
 import { registerHomeworkRoutes } from './routes/homework.js';
+import { registerIdentityRoutes } from './routes/identity.js';
+import { registerFeeRoutes } from './routes/fees.js';
 import cors from '@fastify/cors';
 
 export interface AppDeps {
@@ -176,7 +178,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       const school = (
         await tx.query(
           `SELECT id, code, name, board, address, phone, email, logo_url, website_domain,
-                  attendance_mode, periods_per_day, online_payments_enabled, receipt_prefix
+                  attendance_mode, periods_per_day, online_payments_enabled, receipt_prefix,
+                  brand_color, short_name, affiliation_no
              FROM schools WHERE id = $1`,
           [req.school!.schoolId],
         )
@@ -317,6 +320,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   registerAttendanceRoutes(app, db, requireSchool);
   registerAttendanceReportRoutes(app, db, requireSchool);
   registerHomeworkRoutes(app, db, requireSchool);
+  registerIdentityRoutes(app, db, requireSchool);
+  registerFeeRoutes(app, db, requireSchool);
 
   return app;
 }

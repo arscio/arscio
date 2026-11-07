@@ -6,6 +6,7 @@ import { ROLE_LABELS } from '@aiedu/shared';
 import { ApiError, api, auth } from '@/lib/api';
 import type { Me } from '@/lib/types';
 import { ErrorBox, Loading } from '@/components/ui';
+import { Logo } from '@/components/Logo';
 
 export default function ChooseSchool() {
   const router = useRouter();
@@ -31,13 +32,14 @@ export default function ChooseSchool() {
 
   return (
     <div className="main" style={{ maxWidth: 640, margin: '0 auto', paddingTop: 64 }}>
+      <div style={{ marginBottom: 28 }}><Logo size={30} /></div>
       <div className="page-head"><div><h1>Hello, {me.account.name}</h1>
         <p>{staff.length ? 'Choose the school you want to work in.' : ''}</p></div></div>
       <ErrorBox error={error} />
       {staff.length === 0 ? (
         <div className="sheet empty">
           <h3>This website is for school staff</h3>
-          <p>Parents can see their children's attendance, fees and results in the aiedu parent app.</p>
+          <p>Parents can see their children's attendance, fees and results in the AIEdu parent app.</p>
           <button className="btn btn-plain" onClick={async () => { await auth.logout(); router.replace('/login'); }}>Log out</button>
         </div>
       ) : (
