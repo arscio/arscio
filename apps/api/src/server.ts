@@ -6,7 +6,8 @@ import { consoleOtpSender } from './auth/otp-sender.js';
 
 const config = loadConfig();
 const db = createPool(config.DATABASE_URL);
-const app = await buildApp({ db, jwtSecret: config.JWT_SECRET, otpSender: consoleOtpSender, logger: true });
+const app = await buildApp({ db, jwtSecret: config.JWT_SECRET, otpSender: consoleOtpSender, logger: true,
+  corsOrigins: config.CORS_ORIGINS, });
 
 await app.listen({ port: config.PORT, host: '0.0.0.0' });
 

@@ -9,6 +9,7 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   OTP_PROVIDER: z.enum(['console']).default('console'),
   PORT: z.coerce.number().default(4000),
+  CORS_ORIGINS: z.string().default('').transform((v) => v.split(',').map((x) => x.trim()).filter(Boolean)),
   NODE_ENV: z.string().default('development'),
 });
 

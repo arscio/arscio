@@ -13,12 +13,17 @@
 - ✅ 45 automatic checks passing; whole flow clicked through in a real browser, desktop and phone size
 - ⏸ Excel import postponed until the school's file is available
 
+## Done (7 Nov 2026, afternoon)
+- ✅ Teacher app (Android + iPhone, one codebase): login, today's classes, attendance register
+- ✅ Once-a-day and every-period attendance; covering another class; "Absent today" messages queued for parents
+- ✅ 55 automatic checks passing; app clicked through at phone size against the real server
+
 ## Building, two weeks at a time
 
 | When | What gets built |
 |---|---|
 | 7 – 20 Nov | ~~Admin website shell + login, setup screens~~ (done early). Next: timetable/periods, and Excel import once the school's file arrives. |
-| 21 Nov – 4 Dec | Attendance (once-a-day or per-period) + staff attendance. **Teacher app** first version: login, today's classes, take attendance. |
+| 21 Nov – 4 Dec | ~~Teacher app + attendance~~ (done early). Next: homework in the teacher app, attendance reports on the website, staff attendance. |
 | 5 – 18 Dec | Fees: fee structure screens, generating dues, counter collection, **printable receipt PDF**, concessions, defaulters list. |
 | 19 Dec – 1 Jan | Notices with app notifications. **Parent app** first version: children, attendance, fees due & receipts, notices, homework. |
 | 2 – 15 Jan | Exams, weightage, marks/grades entry in teacher app, **report card design + PDF**. |

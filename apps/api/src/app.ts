@@ -13,12 +13,16 @@ import type { OtpSender } from './auth/otp-sender.js';
 import { can, makeGuards, must, schoolTx } from './context.js';
 import { cancelReceipt, createReceipt, studentDues } from './fees/service.js';
 import { registerSetupRoutes } from './routes/setup.js';
+import { registerAttendanceRoutes } from './routes/attendance.js';
+import cors from '@fastify/cors';
 
 export interface AppDeps {
   db: Db;
   jwtSecret: string;
   otpSender: OtpSender;
   logger?: boolean;
+  /** Websites allowed to call the server directly from a browser (the phone apps don't need this). */
+  corsOrigins?: string[];
   /** Turn off request-rate limits (automated tests only). */
   disableRateLimit?: boolean;
 }
@@ -44,6 +48,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.decorateRequest('accountId', null);
   app.decorateRequest('school', null);
   await app.register(helmet);
+  if (deps.corsOrigins?.length) await app.register(cors, { origin: deps.corsOrigins, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] });
   if (!deps.disableRateLimit) await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
 
   // Friendly, consistent error replies: { error: { code, message } }
@@ -307,6 +312,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   registerSetupRoutes(app, db, requireSchool);
+  registerAttendanceRoutes(app, db, requireSchool);
 
   return app;
 }

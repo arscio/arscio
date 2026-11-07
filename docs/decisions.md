@@ -76,6 +76,17 @@ Store apps (teacher + parent). Proper foundation with separate data per school.
   marigold for things that need attention. Typeface: Atkinson Hyperlegible, chosen for easy reading.
 - Staff who leave are made "inactive", never deleted, so their past records stay.
 
+## Teacher app and attendance (7 Nov 2026)
+
+- Only people with the **Teacher** role can use the teacher app. A principal who also teaches gets the Teacher role too.
+- **Any teacher can take attendance for any class** (for covering absent colleagues); the record always says who took it.
+  *Please confirm this is OK; it can be limited to assigned classes only.*
+- Teachers can only take or change **today's** attendance. The principal/office can correct past days (screen coming on the website).
+- Every child must be marked before saving. Options: Present, Absent, Late (counts as present), On leave.
+- When a child is marked absent, parents get one "Absent today" app message per day. Saving again doesn't repeat it.
+  If a child is later changed to present, the message may already have gone; we'll handle corrections when sending is built.
+- App IDs are placeholders (`com.aiedu.teacher`) until the company name is final.
+
 ## Still open
 
 - Final product and company name.

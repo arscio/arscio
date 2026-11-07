@@ -16,7 +16,7 @@ Target: ready February 2027 → staff test it next to paper in March → live in
 | `apps/api/` | **The server** – the "brain" every app talks to. Handles logins, checks permissions, saves data. | ✅ Foundation built and tested |
 | `packages/shared/` | Rules shared by everything (role names, who can do what). | ✅ Built |
 | `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ✅ Login + school setup screens built and tested |
-| `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ⏳ Later |
+| `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ✅ Login + attendance built and tested |
 | `apps/parent-app/` | **Parent app** (Play Store + App Store): all children, fees, notices, results. | ⏳ Later |
 | `docs/` | Decisions and the build plan. | 📄 |
 
@@ -32,8 +32,8 @@ Target: ready February 2027 → staff test it next to paper in March → live in
    Same for parents and teachers. 5 wrong passwords = 15-minute lock.
 4. **Every important change is written in an audit log that can't be edited.**
 
-There are 45 automatic checks (`apps/api/test/`) that try to break these
-promises. All 45 pass.
+There are 55 automatic checks (`apps/api/test/`) that try to break these
+promises. All 55 pass.
 
 ## Main building blocks (and why)
 
@@ -42,7 +42,7 @@ promises. All 45 pass.
 | Database | **PostgreSQL** | Very reliable, free, available from every cloud provider; has the "sealed per school" feature built in. |
 | Server | **Node.js + TypeScript** | One language across server, website and apps, so it's simpler to maintain. |
 | Admin website | **Next.js** | Fast, standard, easy to host. |
-| Phone apps | **React Native with Expo** (planned) | One codebase builds real Android and iPhone apps for the Play Store and App Store. |
+| Phone apps | **React Native with Expo** | One codebase builds real Android and iPhone apps for the Play Store and App Store. |
 | Passwords | **Argon2** scrambling | Passwords are never stored; even we can't read them. |
 | Money | Stored as exact amounts (paise) | No rounding errors in fees, ever. |
 

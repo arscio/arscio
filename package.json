@@ -12,6 +12,7 @@
     "dev:api": "pnpm --filter @aiedu/api dev",
     "test": "pnpm --filter @aiedu/api test",
     "typecheck": "pnpm -r typecheck",
-    "dev:web": "pnpm --filter @aiedu/admin-web dev"
+    "dev:web": "pnpm --filter @aiedu/admin-web dev",
+    "dev:teacher": "pnpm --filter @aiedu/teacher-app start"
   }
 }
