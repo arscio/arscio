@@ -1,4 +1,4 @@
-import type { Permission, Role } from '@aiedu/shared';
+import type { Permission, Role } from '@arscio/shared';
 
 export interface SchoolInfo {
   school: {
@@ -13,7 +13,7 @@ export interface SchoolInfo {
 }
 
 export interface Me {
-  account: { id: string; name: string; phone: string };
+  account: { id: string; name: string; phone: string; email?: string | null; mustChangePassword?: boolean };
   schools: { id: string; name: string; logo_url: string | null; roles: Role[] }[];
 }
 
@@ -31,7 +31,8 @@ export interface Structure { year: { id: string; name: string }; classes: ClassR
 export interface StaffMember {
   membershipId: string; accountId: string; name: string; designation: string | null;
   employeeCode: string | null; status: 'active' | 'inactive'; phone: string;
-  hasLoggedIn: boolean; roles: Role[];
+  hasLoggedIn: boolean; roles: Role[]; extra?: Permission[];
+  email?: string | null; mustChangePassword?: boolean;
 }
 
 export interface StudentRow {

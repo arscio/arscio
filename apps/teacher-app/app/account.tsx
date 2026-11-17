@@ -17,6 +17,7 @@ export default function Account() {
         <T soft>{school?.name}</T>
       </Card>
       {several ? <Button kind="plain" label="Switch school" onPress={() => router.push('/choose-school')} /> : null}
+      <Button kind="plain" label="Change password" onPress={() => router.push('/change-password')} />
       <Button kind="plain" label="Log out" onPress={logout} />
       {__DEV__ ? <T soft size={12}>Server: {API_URL}</T> : null}
     </View>

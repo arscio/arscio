@@ -22,7 +22,7 @@ const RECIPIENTS = `
   UNION
   SELECT DISTINCT m.account_id
     FROM memberships m JOIN membership_roles r ON r.membership_id = m.id AND r.role <> 'parent'
-   WHERE m.status = 'active' AND $2 IN ('everyone', 'staff')`;
+   WHERE m.status = 'active' AND m.school_id = app_school_id() AND $2 IN ('everyone', 'staff')`;
 
 export function registerNoticeRoutes(app: FastifyInstance, db: Db, requireSchool: preHandlerHookHandler) {
   const pre = { preHandler: requireSchool };

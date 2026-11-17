@@ -5,13 +5,14 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { call, logout as apiLogout, session } from './api';
 
 export interface Me {
-  account: { id: string; name: string; phone: string };
+  account: { id: string; name: string; phone: string; email?: string | null; mustChangePassword?: boolean };
   schools: { id: string; name: string; roles: string[] }[];
 }
 
 type State =
   | { status: 'loading' }
   | { status: 'out' }
+  | { status: 'change'; me: Me } // first login with a password from the school: must choose their own
   | { status: 'in'; me: Me; schoolId: string | null; canTeach: boolean };
 
 const Ctx = createContext<{
@@ -32,7 +33,7 @@ export const useAuth = () => {
 const teachingSchools = (me: Me) => me.schools.filter((s) => s.roles.includes('teacher'));
 
 /** Go to a screen and forget the screens behind it (so there's no stray "back" arrow). */
-function goFresh(path: '/' | '/login' | '/choose-school') {
+function goFresh(path: '/' | '/login' | '/choose-school' | '/change-password') {
   if (router.canDismiss()) router.dismissAll();
   router.replace(path);
 }
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const enter = useCallback(async () => {
     const me = await call<Me>('GET', '/me');
+    if (me.account.mustChangePassword) { setState({ status: 'change', me }); goFresh('/change-password'); return; }
     const schools = teachingSchools(me);
     let schoolId = session.schoolId && schools.some((s) => s.id === session.schoolId) ? session.schoolId : null;
     if (!schoolId && schools.length === 1) schoolId = schools[0]!.id;

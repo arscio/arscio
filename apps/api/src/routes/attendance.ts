@@ -13,6 +13,7 @@ import type { FastifyInstance, preHandlerHookHandler } from 'fastify';
 import { z } from 'zod';
 import type { Db, Tx } from '../db.js';
 import { badRequest, forbidden, notFound } from '../errors.js';
+import { dayFor, scheduleFor, settings } from '../timetable/service.js';
 import { can, schoolTx } from '../context.js';
 
 const uuid = z.string().uuid();
@@ -33,6 +34,17 @@ async function schoolMode(tx: Tx) {
 export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSchool: preHandlerHookHandler) {
   const pre = { preHandler: requireSchool };
   const mayTake = (req: Parameters<typeof can>[0]) => can(req, 'attendance.take') || can(req, 'attendance.view_all');
+  /** Teachers: only their own classes, or a class the principal asked them to cover that day. The office: any class. */
+  const mayTakeSection = async (tx: Tx, req: Parameters<typeof can>[0], sectionId: string, day: string) => {
+    if (can(req, 'attendance.view_all')) return;
+    const r = await tx.query(
+      `SELECT 1 FROM sections s WHERE s.id = $1 AND (s.class_teacher_membership = $2
+          OR EXISTS (SELECT 1 FROM section_teachers t WHERE t.section_id = s.id AND t.membership_id = $2)
+          OR EXISTS (SELECT 1 FROM timetable_slots t WHERE t.section_id = s.id AND t.membership_id = $2)
+          OR EXISTS (SELECT 1 FROM substitutions b WHERE b.section_id = s.id AND b.on_date = $3 AND b.substitute_membership = $2))`,
+      [sectionId, req.school!.membershipId, day]);
+    if (!r.rowCount) throw forbidden('This is not your class. The principal can assign you to cover it.');
+  };
 
   /** Home screen of the teacher app: my sections, and what's done today. */
   app.get('/teacher/today', pre, async (req) => {
@@ -47,6 +59,8 @@ export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSc
              FROM sections s WHERE s.class_teacher_membership = $1
            UNION ALL
            SELECT st.section_id, false, st.subject_id FROM section_teachers st WHERE st.membership_id = $1
+           UNION ALL
+           SELECT DISTINCT t.section_id, false, t.subject_id FROM timetable_slots t WHERE t.membership_id = $1
          )
          SELECT s.id AS "sectionId", c.name AS "className", s.name AS "sectionName",
                 bool_or(m.is_class_teacher) AS "isClassTeacher",
@@ -69,9 +83,29 @@ export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSc
           GROUP BY s.id, c.name, c.sort_order, s.name
           ORDER BY bool_or(m.is_class_teacher) DESC, c.sort_order, s.name`,
         [req.school!.membershipId, day])).rows;
+      // Today's timetable for this teacher: own periods (marked if on leave) and classes they cover.
+      const ts = await settings(tx);
+      const dayInfo = await dayFor(tx, ts, day);
+      const me = req.school!.membershipId;
+      const schedule = (await scheduleFor(tx, ts, dayInfo))
+        .filter((p) => p.teacher?.membershipId === me || p.substitute?.membershipId === me)
+        .map((p) => ({
+          periodNo: p.periodNo, time: ts.periodTimes.find((t) => t.periodNo === p.periodNo) ?? null,
+          sectionId: p.sectionId, classLabel: p.classLabel, subject: p.subject,
+          isCover: p.substitute?.membershipId === me, onLeave: p.teacher?.membershipId === me && p.onLeave,
+          coveredFor: p.substitute?.membershipId === me ? p.teacher?.name ?? null : null,
+        }));
+      const covers = (await tx.query(
+        `SELECT DISTINCT b.section_id AS "sectionId", CASE WHEN c.name ~ '^[0-9]+$' THEN 'Class ' || c.name ELSE c.name END || ' ' || x.name AS "classLabel"
+           FROM substitutions b JOIN sections x ON x.id = b.section_id JOIN classes c ON c.id = x.class_id
+          WHERE b.on_date = $1 AND b.substitute_membership = $2`, [day, me])).rows;
+      const onLeave = (await tx.query(
+        `SELECT part FROM teacher_leaves WHERE membership_id = $1 AND status = 'approved' AND $2::date BETWEEN from_date AND to_date`,
+        [me, day])).rows[0]?.part ?? null;
       return {
         date: day, today: todayIST(), mode: mode.attendance_mode, periodsPerDay: mode.periods_per_day,
         canEditPast: can(req, 'attendance.view_all'), sections: rows,
+        day: dayInfo, schedule, covers, onLeave,
       };
     });
   });
@@ -94,6 +128,7 @@ export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSc
     const q = z.object({ sectionId: uuid, date: date.optional(), period: z.coerce.number().int().min(0).max(15).default(0) }).parse(req.query);
     const day = q.date ?? todayIST();
     return schoolTx(db, req, async (tx) => {
+      await mayTakeSection(tx, req, q.sectionId, day);
       const section = (await tx.query(
         `SELECT s.id, c.name AS "className", s.name AS "sectionName"
            FROM sections s JOIN classes c ON c.id = s.class_id WHERE s.id = $1`, [q.sectionId])).rows[0];
@@ -103,7 +138,7 @@ export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSc
            FROM attendance_sessions a JOIN accounts acc ON acc.id = a.taken_by
           WHERE a.section_id = $1 AND a.on_date = $2 AND a.period_no = $3`, [q.sectionId, day, q.period])).rows[0] ?? null;
       const students = (await tx.query(
-        `SELECT st.id, st.first_name AS "firstName", st.last_name AS "lastName", e.roll_no AS "rollNo",
+        `SELECT st.id, st.first_name AS "firstName", st.last_name AS "lastName", e.roll_no AS "rollNo", st.photo_url AS "photoUrl",
                 st.photo_url AS "photoUrl", k.status, k.note
            FROM enrollments e
            JOIN students st ON st.id = e.student_id AND st.status = 'active'
@@ -133,6 +168,7 @@ export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSc
     }
 
     return schoolTx(db, req, async (tx) => {
+      await mayTakeSection(tx, req, b.sectionId, b.date);
       const mode = await schoolMode(tx);
       if (mode.attendance_mode === 'daily' && b.period !== 0) {
         throw badRequest('wrong_mode', 'This school takes attendance once a day');

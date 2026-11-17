@@ -1,17 +1,21 @@
-// Parent home: the school's band at the top, then today's attendance, fees,
-// homework and messages for the selected child.
-import { Stack, router, useFocusEffect } from 'expo-router';
+// Parent home: the school at the top, the child's glass card with today's
+// attendance, then fees, attendance, homework and messages, and a floating tab bar.
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { ApiError, call } from '@/lib/api';
 import { useParent } from '@/lib/auth';
-import { C, longDate } from '@/lib/theme';
-import { Button, Card, ErrorText, Loading, Pill, T } from '@/components/ui';
+import { C, SH, classLabel } from '@/lib/theme';
+import { Avatar, Button, Card, ErrorText, Loading, Pill, T } from '@/components/ui';
+import { TabBar } from '@/components/TabBar';
 import { SchoolBand } from '@/components/School';
 
 export interface Summary {
   child: { firstName: string; className: string | null; sectionName: string | null; classTeacher: string | null; rollNo: number | null };
   school: { name: string; phone: string | null; onlinePayments: boolean };
+  reportTerms: string[];
   attendance: { today: string | null; month: { present: number; absent: number; leave: number; days: number } };
   fees: { due: string; overdue: string; nextDueOn: string | null; hasFees: boolean };
   homework: { id: string; title: string; dueOn: string | null; subjectName: string | null }[];
@@ -49,21 +53,21 @@ export default function Home() {
   }, [child]);
   useFocusEffect(useCallback(() => { setS(null); void load(); }, [load]));
 
-  const header = (
-    <Stack.Screen options={{
-      title: 'Home',
-      headerRight: () => (
-        <Pressable accessibilityRole="button" onPress={() => router.push('/account')} hitSlop={10} style={{ paddingHorizontal: 12 }}>
-          <T bold style={{ color: '#fff' }}>Account</T>
-        </Pressable>
-      ),
-    }} />
+  const insets = useSafeAreaInsets();
+  const bell = (
+    <Pressable accessibilityRole="button" accessibilityLabel={unread ? `Messages, ${unread} unread` : 'Messages'} onPress={() => router.push('/messages')}
+      style={[st.round, SH.lift]}>
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        <Path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><Path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+      </Svg>
+      {unread > 0 ? <View style={st.dot} /> : null}
+    </Pressable>
   );
 
   if (state.status !== 'in') return <Loading />;
   if (!child) {
     return (
-      <View style={{ padding: 16 }}>{header}
+      <View style={{ padding: 16, paddingTop: 80 }}>
         <Card style={{ gap: 10 }}>
           <T display size={20}>No children linked yet</T>
           <T soft>This app shows children whose school has your mobile number ({state.me.account.phone.replace('+91', '+91 ')}) as the family number. Please ask the school office to check it.</T>
@@ -78,71 +82,128 @@ export default function Home() {
   const counted = m ? m.present + m.absent : 0;
   const pct = m && counted ? Math.round((m.present / counted) * 100) : null;
 
+  const fullName = `${child.first_name} ${child.last_name ?? ''}`.trim();
+  const classLine = [child.class_name ? `${classLabel(child.class_name)} ${child.section_name ?? ''}`.trim() : null, s?.child.rollNo ? `Roll ${String(s.child.rollNo).padStart(2, '0')}` : null].filter(Boolean).join(' · ');
+  const todayTone = today?.[1] ?? 'plain';
+  const todayBg = todayTone === 'done' ? C.lagoonWash : todayTone === 'todo' ? C.marigoldWash : '#E4ECF0';
+  const todayFg = todayTone === 'done' ? C.lagoonDeep : todayTone === 'todo' ? C.marigold : C.inkSoft;
+  const dotColor = todayTone === 'done' ? C.lagoon : todayTone === 'todo' ? C.gold : C.ruleStrong;
+
   return (
-    <ScrollView
-      contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
-      {header}
-      <SchoolBand />
-      <View style={{ padding: 16, gap: 12 }}>
-        <T soft size={14}>{longDate(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))}</T>
-        <ErrorText error={error} />
-        {!s ? <View style={{ height: 200 }}><Loading /></View> : (
-          <>
-            <Card label="Attendance" onPress={() => router.push('/attendance')} style={{ gap: 8 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <T display size={18}>Attendance</T><T bold style={{ color: accent }}>Open</T>
-              </View>
-              {today ? <Pill tone={today[1]} text={today[0]} /> : <Pill tone="plain" text="Not taken yet today" />}
-              <T soft size={14}>{m && m.days
-                ? `This month: ${m.present} present, ${m.absent} absent${m.leave ? `, ${m.leave} on leave` : ''}${pct !== null ? ` (${pct}% attendance)` : ''}.`
-                : 'No attendance recorded this month yet.'}</T>
-            </Card>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom + 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}>
+        <SchoolBand right={bell} />
+        <View style={{ padding: 20, gap: 14 }}>
+          <ErrorText error={error} />
 
-            <Card label="Fees" onPress={() => router.push('/fees')} style={{ gap: 6 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <T display size={18}>Fees</T><T bold style={{ color: accent }}>Open</T>
+          <View style={st.hero}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+              <Avatar name={fullName} uri={child.photo_url} size={62} tint={accent} />
+              <View style={{ flex: 1 }}>
+                <T display size={24} numberOfLines={2}>{fullName}</T>
+                {classLine ? <T soft size={14}>{classLine}</T> : null}
               </View>
-              {!s.fees.hasFees ? <T soft size={14}>The school hasn&apos;t set this year&apos;s fees yet.</T>
-                : Number(s.fees.due) === 0 ? <Pill tone="done" text="All fees paid" /> : (
-                <>
-                  <T display size={26}>{rupees(s.fees.due)}</T>
-                  <T soft size={14}>still to pay this year</T>
-                  {Number(s.fees.overdue) > 0
-                    ? <T bold size={14} style={{ color: C.red }}>{rupees(s.fees.overdue)} is overdue</T>
-                    : s.fees.nextDueOn ? <T size={14}>Next due {shortDate(s.fees.nextDueOn)}</T> : null}
-                </>
-              )}
-            </Card>
+            </View>
+            <View style={[st.today, { backgroundColor: todayBg }]}>
+              <View style={[st.todayDot, { backgroundColor: dotColor }]} />
+              <T bold size={15} style={{ color: todayFg }}>{today ? today[0] : s ? 'Attendance not taken yet today' : 'Loading…'}</T>
+            </View>
+          </View>
 
-            <Card label="Homework" onPress={() => router.push('/homework')} style={{ gap: 8 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <T display size={18}>Homework</T><T bold style={{ color: accent }}>Open</T>
+          {!s ? <View style={{ height: 160 }}><Loading /></View> : (
+            <>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Fees" onPress={() => router.push('/fees')} style={({ pressed }) => [st.tile, pressed && st.pressed]}>
+                  <T soft size={13}>Fees to pay</T>
+                  {!s.fees.hasFees ? <T soft size={14}>Not set yet</T>
+                    : Number(s.fees.due) === 0 ? <T display size={22} style={{ color: C.lagoonDeep }}>All paid</T>
+                    : <T display size={24}>{rupees(s.fees.due)}</T>}
+                  {s.fees.hasFees && Number(s.fees.overdue) > 0 ? <Pill tone="todo" text={`${rupees(s.fees.overdue)} overdue`} />
+                    : s.fees.hasFees && Number(s.fees.due) > 0 && s.fees.nextDueOn ? <Pill tone="todo" text={`Due ${shortDate(s.fees.nextDueOn)}`} /> : null}
+                </Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel="Attendance" onPress={() => router.push('/attendance')} style={({ pressed }) => [st.tile, pressed && st.pressed]}>
+                  <T soft size={13}>This month</T>
+                  <T display size={24}>{pct !== null ? `${pct}%` : '—'}</T>
+                  <View style={st.track}><View style={[st.fill, { width: `${pct ?? 0}%` }]} /></View>
+                  {m && m.days ? <T soft size={12}>{m.present} present, {m.absent} absent</T> : null}
+                </Pressable>
               </View>
-              {s.homework.length === 0 ? <T soft size={14}>No homework in the last week.</T> : s.homework.map((h) => (
-                <View key={h.id} style={{ borderLeftWidth: 3, borderLeftColor: accent, paddingLeft: 10 }}>
-                  <T bold size={15}>{h.title}</T>
-                  <T soft size={13}>{[h.subjectName, h.dueOn ? `due ${shortDate(h.dueOn)}` : null].filter(Boolean).join(', ')}</T>
+
+              <Pressable accessibilityRole="button" accessibilityLabel="Marks" onPress={() => router.push('/marks')} style={({ pressed }) => [st.report, pressed && st.pressed]}>
+                <View style={[st.reportIcon, { backgroundColor: C.boardWash }]}>
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={C.boardDeep} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><Path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></Svg>
                 </View>
-              ))}
-            </Card>
-
-            <Card label="Messages" onPress={() => router.push('/messages')} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
-                <T display size={18}>Messages</T>
-                <T soft size={14}>Notices and alerts from school</T>
-              </View>
-              {unread > 0 ? (
-                <View style={{ backgroundColor: C.gold, borderRadius: 999, minWidth: 30, height: 30, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
-                  <T bold style={{ color: C.ink }}>{unread}</T>
+                <View style={{ flex: 1 }}>
+                  <T bold size={16}>Marks</T>
+                  <T soft size={13}>Exam and class test marks as teachers send them</T>
                 </View>
-              ) : <T bold style={{ color: accent }}>Open</T>}
-            </Card>
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth={2} strokeLinecap="round"><Path d="M9 6l6 6-6 6" /></Svg>
+              </Pressable>
 
-            {s.child.classTeacher ? <T soft size={13} style={{ textAlign: 'center', marginTop: 6 }}>Class teacher: {s.child.classTeacher}</T> : null}
-          </>
-        )}
-      </View>
-    </ScrollView>
+              {s.reportTerms?.length ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Report card" onPress={() => router.push('/report')} style={({ pressed }) => [st.report, pressed && st.pressed]}>
+                  <View style={st.reportIcon}>
+                    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={C.goldInk} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><Path d="M6 3h9l4 4v14H6z" /><Path d="M9 12h7M9 16h5" /></Svg>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <T bold size={16}>Report card</T>
+                    <T soft size={13}>{s.reportTerms.at(-1)} results are ready</T>
+                  </View>
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth={2} strokeLinecap="round"><Path d="M9 6l6 6-6 6" /></Svg>
+                </Pressable>
+              ) : null}
+
+              <Pressable accessibilityRole="button" accessibilityLabel="Homework" onPress={() => router.push('/homework')} style={({ pressed }) => [st.glass, pressed && st.pressed]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <T bold size={16} style={{ flex: 1 }}>Homework</T>
+                  <T soft size={13}>{s.homework.length ? `${s.homework.length} this week` : 'None this week'}</T>
+                </View>
+                {s.homework.slice(0, 3).map((h, i) => (
+                  <View key={h.id} style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                    <View style={[st.subj, { backgroundColor: i % 2 ? C.marigoldWash : C.boardWash }]}>
+                      <T bold size={13} style={{ color: i % 2 ? C.marigold : C.boardDeep }}>{(h.subjectName ?? 'Hw').slice(0, 2)}</T>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <T size={15} numberOfLines={2}>{h.title}</T>
+                      <T soft size={13}>{[h.subjectName, h.dueOn ? `due ${shortDate(h.dueOn)}` : null].filter(Boolean).join(' · ')}</T>
+                    </View>
+                  </View>
+                ))}
+              </Pressable>
+
+              <Pressable accessibilityRole="button" accessibilityLabel="Messages" onPress={() => router.push('/messages')} style={({ pressed }) => [st.notice, { backgroundColor: accent, ...SH.glow(accent) }, pressed && st.pressed]}>
+                <View style={{ flex: 1 }}>
+                  <T size={12} style={{ color: 'rgba(255,255,255,0.85)' }}>Notices and alerts</T>
+                  <T bold size={16} style={{ color: '#fff' }}>{unread > 0 ? `${unread} new message${unread > 1 ? 's' : ''} from school` : 'Messages from school'}</T>
+                </View>
+                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round"><Path d="M9 6l6 6-6 6" /></Svg>
+              </Pressable>
+
+              {s.child.classTeacher ? <T soft size={13} style={{ textAlign: 'center' }}>Class teacher: {s.child.classTeacher}</T> : null}
+            </>
+          )}
+        </View>
+      </ScrollView>
+      <TabBar active="home" />
+    </View>
   );
 }
+
+const st = StyleSheet.create({
+  round: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.glass, borderWidth: 1, borderColor: C.glassEdge, alignItems: 'center', justifyContent: 'center' },
+  dot: { position: 'absolute', top: 9, right: 10, width: 10, height: 10, borderRadius: 5, backgroundColor: C.gold, borderWidth: 2, borderColor: '#fff' },
+  hero: { borderRadius: 28, padding: 20, gap: 16, backgroundColor: C.glass, borderWidth: 1, borderColor: C.glassEdge, ...SH.lift },
+  today: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16 },
+  todayDot: { width: 10, height: 10, borderRadius: 5 },
+  tile: { flex: 1, borderRadius: 24, padding: 16, gap: 6, backgroundColor: '#fff', ...SH.lift },
+  track: { height: 8, borderRadius: 4, backgroundColor: '#E1EEF3', overflow: 'hidden', marginTop: 2 },
+  fill: { height: 8, borderRadius: 4, backgroundColor: C.lagoon },
+  glass: { borderRadius: 24, padding: 18, gap: 12, backgroundColor: C.glass, borderWidth: 1, borderColor: C.glassEdge },
+  subj: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  report: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 24, padding: 16, backgroundColor: '#fff', ...SH.lift },
+  reportIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: C.marigoldWash, alignItems: 'center', justifyContent: 'center' },
+  notice: { borderRadius: 24, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pressed: { transform: [{ scale: 0.98 }] },
+});

@@ -9,3 +9,12 @@ coverage/
 .expo/
 .next/
 *.tsbuildinfo
+.demo-logs/
+deploy/out/
+_to_delete/
+*.pem
+*.p12
+*.jks
+*.keystore
+credentials.json
+*.dump

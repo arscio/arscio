@@ -2,9 +2,9 @@
 
 One code base, many possible apps.
 
-- **`aiedu/`** (default): the "AIEdu Parent" app with the gold icon. Serves every school; after login the app
+- **`arscio/`** (default): the "Arscio Parent" app with the gold icon. Serves every school; after login the app
   shows the child's school name, logo and colour.
-- **A school's own app (later)**: copy `aiedu/` to e.g. `gvps/`, put the school's icon, splash and name in it,
+- **A school's own app (later)**: copy `arscio/` to e.g. `gvps/`, put the school's icon, splash and name in it,
   give it its own store IDs, and set `lockToSchoolId` to that school's ID so only that school appears.
   Build it with `APP_BRAND=gvps`.
 

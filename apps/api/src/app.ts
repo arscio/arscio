@@ -4,11 +4,11 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { z, ZodError } from 'zod';
-import { ROLES, canAssignRole, normalizeIndianPhone, type Role } from '@aiedu/shared';
+import { ROLES, canAssignRole, normalizeIndianPhone, type Role } from '@arscio/shared';
 import { withContext, type Db } from './db.js';
 import { AppError, badRequest, forbidden, notFound } from './errors.js';
 import { AuthService } from './auth/service.js';
-import { Tokens } from './auth/tokens.js';
+import { Tokens, sha256 } from './auth/tokens.js';
 import type { OtpSender } from './auth/otp-sender.js';
 import { can, makeGuards, must, schoolTx } from './context.js';
 import { cancelReceipt, createReceipt, studentDues } from './fees/service.js';
@@ -20,6 +20,16 @@ import { registerIdentityRoutes } from './routes/identity.js';
 import { registerFeeRoutes } from './routes/fees.js';
 import { registerNoticeRoutes } from './routes/notices.js';
 import { registerInboxRoutes, registerParentRoutes } from './routes/parent.js';
+import { registerExamRoutes } from './routes/exams.js';
+import { registerDashboardRoutes } from './routes/dashboard.js';
+import { registerTimetableRoutes } from './routes/timetable.js';
+import { registerStudentFileRoutes } from './routes/student-file.js';
+import { registerCertificateRoutes } from './routes/certificates.js';
+import { registerParentLoginRoutes } from './routes/parent-logins.js';
+import { registerClassTestRoutes } from './routes/class-tests.js';
+import { registerResultRoutes } from './routes/results.js';
+import { registerNewYearRoutes } from './routes/new-year.js';
+import { registerDataRoutes } from './routes/data.js';
 import cors from '@fastify/cors';
 
 export interface AppDeps {
@@ -31,6 +41,12 @@ export interface AppDeps {
   corsOrigins?: string[];
   /** Turn off request-rate limits (automated tests only). */
   disableRateLimit?: boolean;
+  /** 'otp' (SMS codes) or 'password' (no SMS: school sets passwords; parents start with date of birth). */
+  loginMode?: 'otp' | 'password';
+  /** Where people download the apps (printed as a QR code on login slips). */
+  appDownloadUrl?: string;
+  /** The office website's address (marksheet QR codes point to its /verify page). */
+  publicWebUrl?: string;
 }
 
 const phoneSchema = z.string().transform((v, ctx) => {
@@ -48,14 +64,28 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const { db } = deps;
   const app = Fastify({ logger: deps.logger ?? false, trustProxy: true });
   const tokens = new Tokens(deps.jwtSecret);
-  const auth = new AuthService(db, tokens, deps.otpSender, deps.jwtSecret);
+  const loginMode = deps.loginMode ?? 'otp';
+  const auth = new AuthService(db, tokens, deps.otpSender, deps.jwtSecret, loginMode);
   const { requireLogin, requireSchool } = makeGuards(db, tokens);
 
   app.decorateRequest('accountId', null);
   app.decorateRequest('school', null);
   await app.register(helmet);
   if (deps.corsOrigins?.length) await app.register(cors, { origin: deps.corsOrigins, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] });
-  if (!deps.disableRateLimit) await app.register(rateLimit, { max: 300, timeWindow: '1 minute' });
+  // Many people share one internet address: a whole school on the office Wi-Fi, or hundreds of parents
+  // behind one mobile-network address (Jio/Airtel). So logged-in requests are counted per person, and only
+  // anonymous requests per address (with a higher allowance).
+  if (!deps.disableRateLimit) await app.register(rateLimit, {
+    timeWindow: '1 minute',
+    keyGenerator: async (req) => {
+      const h = req.headers.authorization;
+      if (h?.startsWith('Bearer ')) {
+        try { return `acct:${(await tokens.verify(h.slice(7), 'access')).accountId}`; } catch { /* fall through */ }
+      }
+      return `ip:${req.ip}`;
+    },
+    max: async (_req, key) => (key.startsWith('acct:') ? 300 : 1200),
+  });
 
   // Friendly, consistent error replies: { error: { code, message } }
   app.setErrorHandler((err, req, reply) => {
@@ -71,6 +101,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       return reply.status(429).send({ error: { code: 'too_many_requests', message: 'Too many requests, slow down' } });
     }
     req.log.error(err);
+    // Kept for the control panel (time, page and message only; never request data or passwords).
+    db.query(
+      'INSERT INTO platform_errors (method, route, status, message, school_id, account_id) VALUES ($1, $2, 500, $3, $4, $5)',
+      [req.method, (req.routeOptions?.url ?? req.url.split('?')[0] ?? '').slice(0, 200), String((err as Error).message ?? err).slice(0, 500),
+       req.school?.schoolId ?? null, req.accountId ?? null],
+    ).catch(() => undefined);
     return reply.status(500).send({ error: { code: 'server_error', message: 'Something went wrong' } });
   });
 
@@ -80,13 +116,23 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   // ---------------- Login ----------------
-  const authLimit = { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } };
+  // Login limits are per person (the mobile number, email or admission number typed, or the device's
+  // refresh token), not per internet address, so 45 staff on one school Wi-Fi never block each other.
+  // Wrong passwords are separately locked per account (login_failures).
+  const loginKey = (req: { ip: string; body?: unknown }) => {
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const who = [b.identifier, b.phone, b.refreshToken, b.setupToken].find((v) => typeof v === 'string') as string | undefined;
+    return who ? `login:${sha256(who.trim().toLowerCase())}` : `login-ip:${req.ip}`;
+  };
+  const authLimit = { config: { rateLimit: { max: 20, timeWindow: '1 minute', hook: 'preHandler' as const, keyGenerator: loginKey } } };
 
   app.post('/auth/start', authLimit, async (req) => {
+    if (loginMode === 'password') throw badRequest('otp_off', 'SMS login is switched off. Ask the school office to reset your password.');
     const { phone } = z.object({ phone: phoneSchema }).parse(req.body);
     return auth.start(phone);
   });
   app.post('/auth/verify-otp', authLimit, async (req) => {
+    if (loginMode === 'password') throw badRequest('otp_off', 'SMS login is switched off. Ask the school office to reset your password.');
     const b = z.object({ phone: phoneSchema, code: z.string().regex(/^\d{6}$/, 'Enter the 6-digit code') }).parse(req.body);
     return auth.verifyOtp(b.phone, b.code);
   });
@@ -94,11 +140,32 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const b = z.object({ setupToken: z.string(), password: z.string(), device: z.string().max(100).optional() }).parse(req.body);
     return auth.setPassword(b.setupToken, b.password, b.device);
   });
+  /** How the apps should show the login screen ("otp" or "password"). */
+  app.get('/auth/mode', async () => ({ mode: loginMode }));
+
   app.post('/auth/login', authLimit, async (req) => {
-    const b = z.object({ phone: phoneSchema, password: z.string().min(1), device: z.string().max(100).optional() }).parse(req.body);
-    return auth.login(b.phone, b.password, b.device);
+    const b = z.object({
+      // One box: email, mobile number or admission number. ("phone" kept for older app versions.)
+      identifier: z.string().trim().min(1).max(120).optional(),
+      phone: z.string().trim().max(20).optional(),
+      password: z.string().min(1).max(128),
+      device: z.string().max(100).optional(),
+    }).parse(req.body);
+    const id = b.identifier ?? b.phone;
+    if (!id) throw badRequest('missing_login', 'Enter your email, mobile number or admission number');
+    return auth.loginAny(id, b.password, b.device);
+  });
+
+  app.post('/auth/change-password', { ...authLimit, preHandler: requireLogin }, async (req) => {
+    const b = z.object({
+      oldPassword: z.string().max(128).default(''),
+      newPassword: z.string().max(128),
+      device: z.string().max(100).optional(),
+    }).parse(req.body);
+    return auth.changePassword(req.accountId!, b.oldPassword, b.newPassword, b.device);
   });
   app.post('/auth/forgot', authLimit, async (req) => {
+    if (loginMode === 'password') throw badRequest('otp_off', 'SMS login is switched off. Ask the school office to reset your password.');
     const { phone } = z.object({ phone: phoneSchema }).parse(req.body);
     await auth.forgot(phone);
     return { next: 'otp' };
@@ -118,7 +185,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   /** Who am I, and which schools/roles do I have? (used right after login) */
   app.get('/me', { preHandler: requireLogin }, async (req) =>
     withContext(db, { accountId: req.accountId }, async (tx) => {
-      const account = (await tx.query('SELECT id, name, phone FROM accounts WHERE id = $1', [req.accountId])).rows[0];
+      const account = (await tx.query('SELECT id, name, phone, email, must_change_password AS "mustChangePassword" FROM accounts WHERE id = $1', [req.accountId])).rows[0];
       const schools = (
         await tx.query(
           `SELECT s.id, s.name, s.logo_url, m.id AS membership_id,
@@ -271,6 +338,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       ])).rowCount,
     );
     if (!belongs) throw notFound('Person not found in this school');
+    const staff = await schoolTx(db, req, async (tx) => (await tx.query(
+      `SELECT 1 FROM memberships m JOIN membership_roles r ON r.membership_id = m.id
+        WHERE m.account_id = $1 AND m.school_id = $2 AND r.role <> 'parent'`, [accountId, req.school!.schoolId])).rowCount);
+    // Staff logins are the principal's job (and in password mode they get a new password, not a reset).
+    if (staff && (loginMode === 'password' || !req.school!.permissions.has('roles.assign'))) {
+      throw forbidden(loginMode === 'password' ? 'For staff, give a new password from the Staff page' : 'Only the owner or principal can reset a staff login');
+    }
     await auth.resetLogin(accountId);
     await schoolTx(db, req, (tx) =>
       tx.query(
@@ -321,13 +395,26 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return schoolTx(db, req, (tx) => cancelReceipt(tx, receiptId, reason, req.accountId!));
   });
 
-  registerSetupRoutes(app, db, requireSchool);
+  registerSetupRoutes(app, db, requireSchool, auth);
   registerAttendanceRoutes(app, db, requireSchool);
   registerAttendanceReportRoutes(app, db, requireSchool);
   registerHomeworkRoutes(app, db, requireSchool);
   registerIdentityRoutes(app, db, requireSchool);
   registerFeeRoutes(app, db, requireSchool);
   registerNoticeRoutes(app, db, requireSchool);
+  registerExamRoutes(app, db, requireSchool);
+  registerDashboardRoutes(app, db, requireSchool);
+  registerTimetableRoutes(app, db, requireSchool);
+  registerStudentFileRoutes(app, db, requireSchool, deps.jwtSecret);
+  registerCertificateRoutes(app, db, requireSchool);
+  registerParentLoginRoutes(app, db, requireSchool, auth, deps.appDownloadUrl);
+  registerClassTestRoutes(app, db, requireSchool);
+  registerResultRoutes(app, db, requireSchool, {
+    secret: deps.jwtSecret,
+    verifyBase: deps.publicWebUrl ?? deps.corsOrigins?.[0] ?? 'http://localhost:3000',
+  });
+  registerNewYearRoutes(app, db, requireSchool);
+  registerDataRoutes(app, db, requireSchool);
   registerParentRoutes(app, db, requireSchool);
   registerInboxRoutes(app, db, requireLogin);
 

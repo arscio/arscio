@@ -1,17 +1,68 @@
 // Login - the same steps as the admin website:
 // phone -> (first time) SMS code -> create password; afterwards phone + password.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { normalizeIndianPhone } from '@aiedu/shared';
-import { ApiError, authStep } from '@/lib/api';
+import { normalizeIndianPhone } from '@arscio/shared';
+import { ApiError, authStep, loginMode } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { C } from '@/lib/theme';
+import { C, SH } from '@/lib/theme';
 import { Button, ErrorText, Input, Logo, T } from '@/components/ui';
 
 type Step = 'phone' | 'password' | 'otp' | 'new-password';
 
 export default function Login() {
+  const [mode, setMode] = useState<'otp' | 'password' | null>(null);
+  useEffect(() => { void loginMode().then(setMode); }, []);
+  if (!mode) return <SafeAreaView style={{ flex: 1 }}><View style={s.art}><Logo size={38} /></View></SafeAreaView>;
+  return mode === 'password' ? <PasswordLogin /> : <OtpLogin />;
+}
+
+/** No SMS: one box for the login ID, plus the password. */
+function PasswordLogin() {
+  const { afterLogin } = useAuth();
+  const [id, setId] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submit = async () => {
+    if (!id.trim() || !password) return;
+    setBusy(true); setError(null);
+    try {
+      await authStep('login', { identifier: id.trim(), password, device: 'Teacher app' });
+      await afterLogin();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Something went wrong. Please try again.');
+    } finally { setBusy(false); }
+  };
+  return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={s.art}>
+          <Logo size={38} />
+          <T display size={30} style={{ marginTop: 28, lineHeight: 36 }}>Your classes, ready for the day.</T>
+          <T soft size={15} style={{ marginTop: 6 }}>Attendance, homework and marks.</T>
+        </View>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <View style={s.sheet}>
+            <View style={{ gap: 18 }}>
+              <T display size={22}>Log in</T>
+              <Input label="Email or mobile number" hint="The email or mobile number the school has for you." autoCapitalize="none" autoCorrect={false} autoFocus
+                keyboardType="email-address" textContentType="username" autoComplete="username" value={id} onChangeText={setId} returnKeyType="next" />
+              <Input label="Password" hint="First time: the password the principal gave you." secureTextEntry value={password} onChangeText={setPassword}
+                textContentType="password" autoComplete="current-password" onSubmitEditing={submit} returnKeyType="go" />
+              <ErrorText error={error} />
+              <Button label="Log in" busy={busy} disabled={!id.trim() || !password} onPress={submit} />
+              <T soft size={13}>Forgot your password? Ask the principal to give you a new one.</T>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+function OtpLogin() {
   const { afterLogin } = useAuth();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
@@ -43,14 +94,16 @@ export default function Login() {
   });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.art}>
-          <Logo size={34} onDark />
-          <T display size={20} style={{ color: '#fff', marginTop: 18 }}>Teacher</T>
-          <T size={15} style={{ color: '#B5CCC1', marginTop: 2 }}>Attendance, homework and marks.</T>
+          <Logo size={38} />
+          <T display size={30} style={{ marginTop: 28, lineHeight: 36 }}>Your classes, ready for the day.</T>
+          <T soft size={15} style={{ marginTop: 6 }}>Attendance, homework and marks.</T>
         </View>
-        <ScrollView style={s.sheet} contentContainerStyle={{ padding: 24, gap: 18 }} keyboardShouldPersistTaps="handled">
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+        <View style={s.sheet}>
+        <View style={{ gap: 18 }}>
           {step === 'phone' && (<>
             <View><T display size={22}>Log in</T><T soft>Use the mobile number the school has for you.</T></View>
             <Input label="Mobile number" prefix="+91" keyboardType="number-pad" maxLength={10} autoFocus
@@ -112,6 +165,8 @@ export default function Login() {
                 });
               }} />
           </>)}
+        </View>
+        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -119,7 +174,7 @@ export default function Login() {
 }
 
 const s = StyleSheet.create({
-  art: { paddingHorizontal: 24, paddingTop: 36, paddingBottom: 28, backgroundColor: C.ink },
-  sheet: { flex: 1, backgroundColor: C.sheet, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  art: { paddingHorizontal: 24, paddingTop: 40, paddingBottom: 28 },
+  sheet: { padding: 22, borderRadius: 28, backgroundColor: C.glass, borderWidth: 1, borderColor: C.glassEdge, ...SH.lift },
   row: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' },
 });

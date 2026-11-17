@@ -29,6 +29,7 @@ beforeAll(async () => {
   parentToken = (await loginAs(env, fam5.phone)).accessToken;
   parent = api(env, parentToken, S.schoolId);
   class5 = (await env.owner.query('SELECT class_id FROM sections WHERE id = $1', [fam5.sectionId])).rows[0].class_id;
+  await env.owner.query('UPDATE sections SET class_teacher_membership = $1 WHERE id = $2', [t.membershipId, fam5.sectionId]);
 });
 afterAll(async () => { await env.close(); });
 

@@ -1,4 +1,4 @@
-# aiedu Teacher app
+# arscio Teacher app
 
 Android + iPhone app built with Expo (React Native). One set of code makes both apps.
 Teaching only: today it does **login**, **attendance** and **homework**; marks come next.
@@ -24,11 +24,11 @@ Only people with the **Teacher** role can use it. Same mobile number and passwor
 2. On your Mac, start the server (see the main README), then:
    ```bash
    cp apps/teacher-app/.env.example apps/teacher-app/.env   # put your Mac's Wi-Fi address in it
-   pnpm --filter @aiedu/teacher-app start
+   pnpm --filter @arscio/teacher-app start
    ```
 3. Scan the QR code that appears with your phone's camera. Phone and Mac must be on the same Wi-Fi.
 
 ## Putting it on the Play Store and App Store (later)
 
 Done with Expo's build service (EAS). Needs the Apple Developer and Google Play accounts.
-The app IDs are placeholders (`com.aiedu.teacher`) until the company name is final.
+The app IDs are placeholders (`com.arscio.teacher`) until the company name is final.

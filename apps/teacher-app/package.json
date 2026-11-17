@@ -1,9 +1,11 @@
 {
-  "name": "@aiedu/teacher-app",
+  "name": "@arscio/teacher-app",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@aiedu/shared": "workspace:*",
+    "@arscio/shared": "workspace:*",
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/figtree": "^0.4.1",
     "@expo-google-fonts/manrope": "^0.4.3",
     "@expo-google-fonts/sora": "^0.4.2",
     "@expo/metro-runtime": "~58.0.17",

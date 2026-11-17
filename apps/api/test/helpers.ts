@@ -1,6 +1,6 @@
 import pg from 'pg';
 import type { FastifyInstance } from 'fastify';
-import type { Role } from '@aiedu/shared';
+import type { Role } from '@arscio/shared';
 import { buildApp } from '../src/app.js';
 import { createPool, type Db } from '../src/db.js';
 import { createSchool } from '../src/platform/create-school.js';
@@ -28,12 +28,12 @@ export interface TestEnv {
   close(): Promise<void>;
 }
 
-export async function setupEnv(): Promise<TestEnv> {
+export async function setupEnv(opts: { loginMode?: 'otp' | 'password'; rateLimit?: boolean } = {}): Promise<TestEnv> {
   const db = createPool(TEST_APP_URL);
   const owner = new pg.Client({ connectionString: TEST_OWNER_URL });
   await owner.connect();
   const otp = new FakeOtp();
-  const app = await buildApp({ db, jwtSecret: SECRET, otpSender: otp, disableRateLimit: true });
+  const app = await buildApp({ db, jwtSecret: SECRET, otpSender: otp, disableRateLimit: !opts.rateLimit, loginMode: opts.loginMode });
   return {
     app, db, owner, otp,
     async close() {

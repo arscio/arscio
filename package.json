@@ -1,19 +1,42 @@
 {
-  "name": "aiedu",
+  "name": "arscio",
   "private": true,
-  "description": "aiedu (working name) - school management platform",
+  "description": "Arscio - school management platform",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "db:up": "docker compose up -d db",
-    "db:migrate": "pnpm --filter @aiedu/api migrate",
-    "dev:api": "pnpm --filter @aiedu/api dev",
-    "test": "pnpm --filter @aiedu/api test",
+    "db:migrate": "pnpm --filter @arscio/api migrate",
+    "dev:api": "pnpm --filter @arscio/api dev",
+    "test": "pnpm --filter @arscio/api test",
     "typecheck": "pnpm -r typecheck",
-    "dev:web": "pnpm --filter @aiedu/admin-web dev",
-    "dev:teacher": "pnpm --filter @aiedu/teacher-app start",
-    "dev:parent": "pnpm --filter @aiedu/parent-app start"
+    "dev:web": "pnpm --filter @arscio/admin-web dev",
+    "dev:teacher": "pnpm --filter @arscio/teacher-app start",
+    "dev:parent": "pnpm --filter @arscio/parent-app start",
+    "demo:reset": "pnpm --filter @arscio/api demo:reset",
+    "demo:start": "bash scripts/demo-start.sh",
+    "demo:teacher": "bash scripts/demo-app.sh teacher",
+    "demo:parent": "bash scripts/demo-app.sh parent",
+    "build:android": "bash scripts/android-build.sh",
+    "package:server": "bash deploy/make-package.sh"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "current",
+        "linux"
+      ],
+      "cpu": [
+        "current",
+        "x64",
+        "arm64"
+      ],
+      "libc": [
+        "current",
+        "glibc"
+      ]
+    }
   }
 }

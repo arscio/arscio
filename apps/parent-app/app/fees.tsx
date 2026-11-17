@@ -47,7 +47,7 @@ export default function Fees() {
           const late = lines[0]!.dueOn < today;
           const fine = lines.reduce((a, x) => a + Number(x.suggestedFine), 0);
           return (
-            <Card key={inst} style={{ gap: 8, borderLeftWidth: 4, borderLeftColor: late ? C.red : accent }}>
+            <Card key={inst} style={{ gap: 8 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <T bold size={16}>{inst}</T>
                 <T bold size={14} style={{ color: late ? C.red : C.ink }}>{late ? 'Overdue since ' : 'Due '}{shortDate(lines[0]!.dueOn)}</T>

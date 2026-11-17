@@ -1,24 +1,24 @@
 {
   "expo": {
-    "name": "AIEdu Teacher",
-    "slug": "aiedu-teacher",
+    "name": "Arscio Teacher",
+    "slug": "arscio-teacher",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aiedu.teacher"
+      "bundleIdentifier": "com.arscio.teacher"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0E7C5F",
+        "backgroundColor": "#0B7FA6",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.aiedu.teacher"
+      "package": "com.arscio.teacher"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,10 +33,10 @@
         {
           "image": "./assets/splash-icon.png",
           "imageWidth": 160,
-          "backgroundColor": "#0E7C5F"
+          "backgroundColor": "#0B7FA6"
         }
       ]
     ],
-    "scheme": "aiedu-teacher"
+    "scheme": "arscio-teacher"
   }
 }

@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { View } from 'react-native';
 import { API_URL } from '@/lib/api';
 import { useParent } from '@/lib/auth';
@@ -20,10 +21,11 @@ export default function Account() {
         ))}
         <T soft size={13}>Missing a child? Ask their school office to use this mobile number as the family number.</T>
       </Card>
+      <Button kind="plain" label="Change password" onPress={() => router.push('/change-password')} />
       <Button kind="plain" label="Log out" onPress={logout} />
       <View style={{ alignItems: 'center', marginTop: 20, gap: 4 }}>
         <Logo size={20} />
-        <T soft size={12}>AIEdu Parent</T>
+        <T soft size={12}>Arscio Parent</T>
         {__DEV__ ? <T soft size={11}>Server: {API_URL}</T> : null}
       </View>
     </View>

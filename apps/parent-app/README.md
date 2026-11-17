@@ -1,6 +1,6 @@
-# AIEdu Parent app
+# Arscio Parent app
 
-Android + iPhone app (Expo / React Native). The store app is **"AIEdu Parent"** with the gold icon,
+Android + iPhone app (Expo / React Native). The store app is **"Arscio Parent"** with the gold icon,
 and it serves every school. Inside, it takes on the **school's identity**: the selected child's school
 logo, name and colour. A parent with children in two schools sees each school's look as they switch.
 
@@ -18,11 +18,11 @@ logo, name and colour. A parent with children in two schools sees each school's 
 
 ## A school's own app (later)
 
-See `brands/README.md`. Copy `brands/aiedu` to a new folder with the school's icon and name, set
+See `brands/README.md`. Copy `brands/arscio` to a new folder with the school's icon and name, set
 `lockToSchoolId`, and build with `APP_BRAND=<folder>`. Same code, the school's own store listing.
 
 ## Try it on your phone
 
 Same as the teacher app: install **Expo Go**, set `EXPO_PUBLIC_API_URL` in `.env` to your Mac's Wi-Fi
-address, then `pnpm --filter @aiedu/parent-app start` and scan the QR code.
+address, then `pnpm --filter @arscio/parent-app start` and scan the QR code.
 (Notifications need the published app, not Expo Go.)

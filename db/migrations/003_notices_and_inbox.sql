@@ -21,7 +21,7 @@ ALTER TABLE notices ADD COLUMN withdrawn_at timestamptz;
 ALTER TABLE notices ADD COLUMN withdrawn_by uuid REFERENCES accounts(id);
 CREATE TRIGGER notices_no_delete BEFORE DELETE ON notices
   FOR EACH ROW EXECUTE FUNCTION forbid_change();
-REVOKE DELETE ON notices FROM aiedu_app;
+REVOKE DELETE ON notices FROM arscio_app;
 
 -- Push devices belong to a person, not a school.
 ALTER TABLE push_devices ENABLE ROW LEVEL SECURITY;
@@ -41,4 +41,4 @@ BEGIN
   ON CONFLICT (push_token) DO UPDATE SET last_seen_at = now(), app = excluded.app, platform = excluded.platform;
 END $$;
 REVOKE ALL ON FUNCTION claim_push_device(uuid, text, text, text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION claim_push_device(uuid, text, text, text) TO aiedu_app;
+GRANT EXECUTE ON FUNCTION claim_push_device(uuid, text, text, text) TO arscio_app;

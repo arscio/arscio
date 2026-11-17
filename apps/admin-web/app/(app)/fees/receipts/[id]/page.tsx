@@ -1,11 +1,11 @@
 'use client';
 // A printable fee receipt. It's the SCHOOL's document: school logo, name, address
-// and colour on top; a small "Powered by AIEdu" at the bottom. Two copies on one A4:
+// and colour on top; a small "Powered by Arscio" at the bottom. Two copies on one A4:
 // one for the parent, one for the office.
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import { rupeesInWords } from '@aiedu/shared';
+import { rupeesInWords } from '@arscio/shared';
 import { api } from '@/lib/api';
 import { classLabel } from '@/lib/types';
 import { MODES, inr, niceDate } from '@/components/FeesTabs';
@@ -17,7 +17,7 @@ interface Receipt {
   collectedBy: string; yearName: string;
   student: { id: string; name: string; admissionNo: string; className: string | null; sectionName: string | null;
     rollNo: number | null; fatherName: string | null; motherName: string | null; phone: string };
-  school: { id: string; name: string; address: string | null; phone: string | null; email: string | null;
+  school: { id: string; name: string; shortName: string | null; address: string | null; phone: string | null; email: string | null;
     logoUrl: string | null; brandColor: string | null; affiliationNo: string | null; board: string };
   lines: { description: string; amount: string; fine: string }[];
 }
@@ -56,50 +56,67 @@ function ReceiptPage() {
 
 function ReceiptCopy({ r, copy }: { r: Receipt; copy: string }) {
   const fines = r.lines.reduce((a, l) => a + Number(l.fine), 0);
+  const initials = r.school.shortName ?? r.school.name.split(/\s+/).filter((w) => /^[A-Z]/.test(w)).map((w) => w[0]).join('').slice(0, 3);
   return (
     <section className="receipt" aria-label={copy}>
-      <span className="copy">{copy}</span>
       {r.status === 'cancelled' ? <div className="void" aria-hidden><span>CANCELLED</span></div> : null}
+      <div className="receipt-watermark" aria-hidden>{initials}</div>
       <div className="receipt-head">
-        {r.school.logoUrl ? <img src={`/api/school-logo/${r.school.id}`} alt="" /> : null}
+        <div className="receipt-crest">
+          {r.school.logoUrl ? <img src={`/api/school-logo/${r.school.id}`} alt="" /> : <span>{initials}</span>}
+        </div>
         <div>
           <h2>{r.school.name}</h2>
           <div className="small muted">
-            {[r.school.address, r.school.phone ? `Phone ${r.school.phone}` : null].filter(Boolean).join('. ')}
-            {r.school.affiliationNo ? <><br />{r.school.board} Affiliation No. {r.school.affiliationNo}</> : null}
+            {[r.school.affiliationNo ? `${r.school.board} Affiliation No. ${r.school.affiliationNo}` : null, r.school.address, r.school.phone ? `Phone ${r.school.phone}` : null].filter(Boolean).join(' · ')}
           </div>
         </div>
       </div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
-        <strong style={{ fontFamily: 'var(--display)', fontSize: '1.05rem' }}>Fee receipt</strong>
-        <span className="small">No. <strong className="num">{r.receiptNo}</strong>  Date <strong>{niceDate(r.paidOn)}</strong></span>
+      <div className="receipt-band">
+        <span className="receipt-tag">FEE RECEIPT</span>
+        <span className="small muted">Session {r.yearName} · {copy}</span>
+      </div>
+      <div className="receipt-rule" aria-hidden />
+      <div className="row" style={{ justifyContent: 'space-between', margin: '12px 0 10px' }}>
+        <div><div className="small muted">Receipt no.</div><strong className="num">{r.receiptNo}</strong></div>
+        <div style={{ textAlign: 'right' }}><div className="small muted">Date</div><strong>{niceDate(r.paidOn)}</strong></div>
       </div>
       <div className="receipt-meta">
-        <div>Student: <strong>{r.student.name}</strong></div>
-        <div>Admission no.: <strong>{r.student.admissionNo}</strong></div>
-        <div>Class: <strong>{r.student.className ? `${classLabel(r.student.className)} ${r.student.sectionName}` : '-'}</strong>{r.student.rollNo ? `, Roll ${r.student.rollNo}` : ''}</div>
-        <div>Parent: <strong>{r.student.fatherName ?? r.student.motherName ?? '-'}</strong></div>
-        <div>Session: <strong>{r.yearName}</strong></div>
-        <div>Paid by: <strong>{MODES[r.mode]}</strong>{r.reference ? ` (${r.reference})` : ''}</div>
+        <div><span className="muted">Student: </span><strong>{r.student.name}</strong></div>
+        <div><span className="muted">Class: </span><strong>{r.student.className ? `${classLabel(r.student.className)} ${r.student.sectionName}` : '-'}{r.student.rollNo ? `, Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</strong></div>
+        <div><span className="muted">Parent: </span><strong>{r.student.fatherName ?? r.student.motherName ?? '-'}</strong></div>
+        <div><span className="muted">Admission no.: </span><strong>{r.student.admissionNo}</strong></div>
       </div>
       <table>
-        <thead><tr><th>Particulars</th><th style={{ textAlign: 'right' }}>Amount</th></tr></thead>
+        <thead><tr><th>Fee head</th><th style={{ textAlign: 'right' }}>Amount</th></tr></thead>
         <tbody>
           {r.lines.map((l, i) => <tr key={i}><td>{l.description}</td><td className="money">{inr(l.amount)}</td></tr>)}
           {fines > 0 ? <tr><td>Late fine</td><td className="money">{inr(fines)}</td></tr> : null}
-          <tr><td><strong>Total</strong></td><td className="money"><strong>{inr(r.total)}</strong></td></tr>
         </tbody>
+        <tfoot><tr><td><strong>Total paid</strong></td><td className="money receipt-total">{inr(r.total)}</td></tr></tfoot>
       </table>
-      <p className="small" style={{ marginTop: 8 }}>Received with thanks: <strong>{rupeesInWords(r.total)}</strong></p>
+      <p className="small muted" style={{ marginTop: 4 }}>{rupeesInWords(r.total)}</p>
       {r.status === 'cancelled' ? (
         <p className="small" style={{ color: 'var(--red-ink)', marginTop: 6 }}>
           Cancelled on {niceDate(r.cancelledAt!)} by {r.cancelledBy}. Reason: {r.cancelReason}
         </p>
       ) : null}
       <div className="receipt-foot">
-        <span>Collected by {r.collectedBy}. Computer-generated receipt. Powered by AIEdu.</span>
-        <span className="sign">Accountant&apos;s signature</span>
+        <div className="small">
+          <div><span className="muted">Paid by: </span>{MODES[r.mode]}{r.reference ? ` (${r.reference})` : ''}</div>
+          <div><span className="muted">Received by: </span>{r.collectedBy}</div>
+        </div>
+        {r.status !== 'cancelled' ? <span className="receipt-stamp" aria-hidden>PAID</span> : null}
+        <span className="sign">Signature</span>
       </div>
+      <p className="receipt-note">Computer-made receipt. It cannot be deleted, only cancelled with a reason.</p>
+      <p className="receipt-powered">
+        <svg width="11" height="11" viewBox="0 0 100 100" aria-hidden focusable="false">
+          <g fill="#0B7FA6" stroke="#0B7FA6" strokeWidth="7" strokeLinejoin="round"><path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" /></g>
+          <path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F2A33A" />
+        </svg>
+        Powered by Arscio
+      </p>
     </section>
   );
 }

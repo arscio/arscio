@@ -1,40 +1,47 @@
-import { Manrope_500Medium, Manrope_700Bold, useFonts } from '@expo-google-fonts/manrope';
-import { Sora_700Bold, Sora_800ExtraBold } from '@expo-google-fonts/sora';
-import { Stack } from 'expo-router';
+import { BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
+import { Figtree_500Medium, Figtree_600SemiBold, useFonts } from '@expo-google-fonts/figtree';
+import { View } from 'react-native';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ParentProvider, useParent } from '@/lib/auth';
 import { C, F } from '@/lib/theme';
-import { Loading } from '@/components/ui';
+import { Backdrop, Loading } from '@/components/ui';
 
 function Screens() {
-  // The top bar takes the colour of the selected child's school.
+  // Light, airy top bars; the school's colour shows inside the screens.
   const { accent } = useParent();
   return (
-    <>
-      <StatusBar style="light" />
+    <View style={{ flex: 1, backgroundColor: C.paper }}>
+      <Backdrop />
+      <StatusBar style="dark" />
+      <ThemeProvider value={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent', card: C.paper, primary: accent, text: C.ink } }}>
       <Stack screenOptions={{
-        headerStyle: { backgroundColor: accent },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontFamily: F.display },
+        headerStyle: { backgroundColor: 'transparent' },
+        headerTintColor: accent,
+        headerTitleStyle: { fontFamily: F.display, color: C.ink },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: C.paper },
+        contentStyle: { backgroundColor: 'transparent' },
       }}>
-        <Stack.Screen name="index" options={{ title: 'Home' }} />
+        <Stack.Screen name="index" options={{ title: 'Home', headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="change-password" options={{ title: 'Change password' }} />
         <Stack.Screen name="attendance" options={{ title: 'Attendance' }} />
         <Stack.Screen name="fees" options={{ title: 'Fees' }} />
         <Stack.Screen name="receipt/[id]" options={{ title: 'Receipt' }} />
         <Stack.Screen name="homework" options={{ title: 'Homework' }} />
         <Stack.Screen name="messages" options={{ title: 'Messages' }} />
         <Stack.Screen name="account" options={{ title: 'My account' }} />
+        <Stack.Screen name="report" options={{ title: 'Report card' }} />
+        <Stack.Screen name="marks" options={{ title: 'Marks' }} />
       </Stack>
-    </>
+      </ThemeProvider>
+    </View>
   );
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ Manrope_500Medium, Manrope_700Bold, Sora_700Bold, Sora_800ExtraBold });
+  const [fontsLoaded] = useFonts({ Figtree_500Medium, Figtree_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold });
   if (!fontsLoaded) return <Loading />;
   return (
     <SafeAreaProvider>

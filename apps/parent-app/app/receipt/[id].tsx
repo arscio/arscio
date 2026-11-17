@@ -2,7 +2,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { rupeesInWords } from '@aiedu/shared';
+import { rupeesInWords } from '@arscio/shared';
 import { call } from '@/lib/api';
 import { useParent } from '@/lib/auth';
 import { C, classLabel } from '@/lib/theme';
@@ -61,7 +61,7 @@ export default function ReceiptScreen() {
           </View>
         </View>
         <T soft size={13}>{rupeesInWords(r.total)}. Paid by {MODES[r.mode]}{r.reference ? ` (${r.reference})` : ''}. Collected by {r.collectedBy}.</T>
-        <T soft size={11} style={{ textAlign: 'center' }}>Powered by AIEdu</T>
+        <T soft size={11} style={{ textAlign: 'center' }}>Powered by Arscio</T>
       </Card>
     </ScrollView>
   );

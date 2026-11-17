@@ -2,7 +2,7 @@
 // After login: pick the school to work in. With only one school, this is skipped.
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ROLE_LABELS } from '@aiedu/shared';
+import { ROLE_LABELS } from '@arscio/shared';
 import { ApiError, api, auth } from '@/lib/api';
 import type { Me } from '@/lib/types';
 import { ErrorBox, Loading } from '@/components/ui';
@@ -39,7 +39,7 @@ export default function ChooseSchool() {
       {staff.length === 0 ? (
         <div className="sheet empty">
           <h3>This website is for school staff</h3>
-          <p>Parents can see their children's attendance, fees and results in the AIEdu parent app.</p>
+          <p>Parents can see their children's attendance, fees and results in the Arscio parent app.</p>
           <button className="btn btn-plain" onClick={async () => { await auth.logout(); router.replace('/login'); }}>Log out</button>
         </div>
       ) : (

@@ -8,6 +8,7 @@
 //  - phones that have uninstalled the app are forgotten
 //  - SMS is NOT used here (kept to a minimum, as decided)
 import type pg from 'pg';
+import { heartbeat } from '../control/heartbeat.js';
 
 export const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) =>
@@ -93,13 +94,19 @@ export async function sendQueuedPushes(owner: pg.Pool, fetchImpl: FetchLike = fe
 /** Start sending every few seconds. */
 export function startPushWorker(owner: pg.Pool, everyMs = 5000, log: (m: string) => void = console.log) {
   let running = false;
+  let lastBeat = 0;
   const t = setInterval(async () => {
     if (running) return;
     running = true;
     try {
       const r = await sendQueuedPushes(owner);
       if (r.sent || r.failed) log(`push: ${r.sent} sent, ${r.failed} failed, ${r.skipped} skipped`);
-    } catch (e) { log(`push worker error: ${(e as Error).message}`); }
+      // Recorded about once a minute (not every 5 seconds) unless something was sent
+      if (r.sent || r.failed || Date.now() - lastBeat > 60_000) { lastBeat = Date.now(); await heartbeat(owner, 'push', true, r); }
+    } catch (e) {
+      log(`push worker error: ${(e as Error).message}`);
+      await heartbeat(owner, 'push', false, undefined, (e as Error).message);
+    }
     finally { running = false; }
   }, everyMs);
   return () => clearInterval(t);

@@ -4,13 +4,13 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_USER: aiedu_owner
+      POSTGRES_USER: arscio_owner
       POSTGRES_PASSWORD: dev_only_password
-      POSTGRES_DB: aiedu
+      POSTGRES_DB: arscio
     ports:
       - "5432:5432"
     volumes:
-      - aiedu_db:/var/lib/postgresql/data
+      - arscio_db:/var/lib/postgresql/data
 
 volumes:
-  aiedu_db:
+  arscio_db:

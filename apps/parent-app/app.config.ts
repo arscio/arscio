@@ -1,14 +1,18 @@
-// Builds the parent app for a "brand": AIEdu Parent by default, or a school's own app.
+// Builds the parent app for a "brand": Arscio Parent by default, or a school's own app.
 // Choose with APP_BRAND=<folder in ./brands>, e.g. APP_BRAND=gvps.
 import type { ExpoConfig } from 'expo/config';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const id = process.env.APP_BRAND ?? 'aiedu';
+const id = process.env.APP_BRAND ?? 'arscio';
 const dir = `./brands/${id}`;
 const brand = JSON.parse(readFileSync(path.join(__dirname, dir, 'brand.json'), 'utf8'));
+// The Expo project this app is built under (saved by scripts/android-build.sh the first time).
+const idFile = path.join(__dirname, 'eas-project-id.txt');
+const projectId = existsSync(idFile) ? readFileSync(idFile, 'utf8').trim() : undefined;
 
 const config: ExpoConfig = {
+  owner: 'arscios-team',
   name: brand.name,
   slug: brand.slug,
   scheme: brand.scheme,
@@ -32,6 +36,7 @@ const config: ExpoConfig = {
     ['expo-splash-screen', { image: `${dir}/splash.png`, imageWidth: 160, backgroundColor: brand.splashBackground }],
   ],
   extra: {
+    ...(projectId ? { eas: { projectId } } : {}),
     brand: { id: brand.id, name: brand.name, lockToSchoolId: brand.lockToSchoolId || '' },
   },
 };

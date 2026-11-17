@@ -103,12 +103,17 @@ describe('Attendance (once a day)', () => {
     expect(r.statusCode).toBe(400);
   });
 
-  it('any teacher can cover another class; it records who took it', async () => {
+  it('a teacher can take another class only when assigned to cover it; it records who took it', async () => {
     const sub = await addMember(env, S.schoolId, ['teacher'], 'Bikash Roy');
     const subApi = api(env, (await loginAs(env, sub.phone)).accessToken, S.schoolId);
     expect((await subApi.get('/teacher/today')).json().sections).toHaveLength(0);
-    const all = (await subApi.get('/attendance/sections')).json().sections;
-    expect(all.map((s: { sectionId: string }) => s.sectionId)).toContain(sectionId);
+    expect((await subApi.get(`/attendance/sheet?sectionId=${sectionId}`)).statusCode).toBe(403);
+    expect((await subApi.put('/attendance/sheet', { sectionId, date: todayIST(), period: 0, marks: marks([]) })).statusCode).toBe(403);
+    // The principal assigns Bikash to cover the class today.
+    await env.owner.query(
+      `INSERT INTO substitutions (school_id, on_date, section_id, period_no, substitute_membership, assigned_by)
+       VALUES ($1, $2, $3, 1, $4, (SELECT account_id FROM memberships WHERE id = $4))`, [S.schoolId, todayIST(), sectionId, sub.membershipId]);
+    expect((await subApi.get('/teacher/today')).json().covers).toHaveLength(1);
     await subApi.put('/attendance/sheet', { sectionId, date: todayIST(), period: 0, marks: marks([]) });
     const sheet = (await teacher.get(`/attendance/sheet?sectionId=${sectionId}`)).json();
     expect(sheet.session.takenBy).toBe('Bikash Roy');

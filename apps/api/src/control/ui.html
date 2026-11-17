@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Arscio control</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B3B4C'/%3E%3Cg transform='translate(18 18) scale(.64)'%3E%3Cg fill='%237FD3EE' stroke='%237FD3EE' stroke-width='7' stroke-linejoin='round'%3E%3Cpath d='M10 89L41 12H59L90 89H74L50 33L26 89Z'/%3E%3C/g%3E%3Cpath d='M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z' fill='%23F2A33A'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root {
+    --ink: #0B2A36; --ink-2: #3E5A66; --ink-3: #6E8791; --line: #D7E3E8; --paper: #F4F8FA; --card: #FFFFFF;
+    --peacock: #0B7FA6; --peacock-deep: #075E7C; --gold: #F2A33A; --gold-wash: #FDF1DF;
+    --good: #1E8A5A; --good-wash: #E3F4EB; --bad: #B4432F; --bad-wash: #FBE9E5; --warn: #9A5B00; --warn-wash: #FDF1DF;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: "Sora", "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 var(--sans); color: var(--ink); background: var(--paper); }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 28px; padding: 0 28px; height: 60px;
+         background: var(--ink); color: #fff; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.3px; font-size: 18px; }
+  .brand small { font-weight: 500; color: #9FC3D0; font-size: 13px; letter-spacing: 0; }
+  nav { display: flex; gap: 4px; flex: 1; }
+  nav button { background: none; border: 0; color: #B9D3DC; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  nav button[aria-current="page"] { background: rgba(127, 211, 238, .14); color: #fff; }
+  .top .who { display: flex; gap: 12px; align-items: center; color: #9FC3D0; font-size: 13px; }
+  .link { background: none; border: 0; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+  h1 { font-size: 26px; letter-spacing: -.5px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .sub { color: var(--ink-3); margin: 0 0 22px; }
+  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .card.wide { grid-column: 1 / -1; }
+  .status { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; border-radius: 14px; margin-bottom: 22px; }
+  .status.ok { background: var(--good-wash); }
+  .status.warn { background: var(--warn-wash); }
+  .status.bad { background: var(--bad-wash); }
+  .status .dot { flex: 0 0 14px; height: 14px; border-radius: 50%; margin-top: 7px; }
+  .ok .dot { background: var(--good); } .warn .dot { background: var(--gold); } .bad .dot { background: var(--bad); }
+  .status strong { font-size: 18px; display: block; }
+  .status ul { margin: 6px 0 0; padding-left: 18px; }
+  .status li.bad { color: var(--bad); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 6px 10px 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--ink-3); } .small { font-size: 13px; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: #EAF1F4; color: var(--ink-2); white-space: nowrap; }
+  .pill.good { background: var(--good-wash); color: var(--good); }
+  .pill.bad { background: var(--bad-wash); color: var(--bad); }
+  .pill.warn { background: var(--warn-wash); color: var(--warn); }
+  .bar { height: 8px; border-radius: 99px; background: #E6EEF2; overflow: hidden; margin: 6px 0 2px; }
+  .bar span { display: block; height: 100%; background: var(--peacock); }
+  .bar.hot span { background: var(--bad); } .bar.mid span { background: var(--gold); }
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 12px; }
+  .kv dt { color: var(--ink-3); } .kv dd { margin: 0; }
+  .btn { border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 700; cursor: pointer; background: #E6EEF2; }
+  .btn.primary { background: var(--peacock); color: #fff; }
+  .btn.primary:hover { background: var(--peacock-deep); }
+  .btn.danger { background: var(--bad-wash); color: var(--bad); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .between { justify-content: space-between; }
+  form .f { display: grid; gap: 4px; margin-bottom: 12px; }
+  form label { font-weight: 600; font-size: 13px; }
+  form .hint { font-size: 12px; color: var(--ink-3); }
+  input, select { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: #fff; width: 100%; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .err { color: var(--bad); font-weight: 600; min-height: 1.5em; }
+  .creds { border: 2px dashed var(--peacock); border-radius: 14px; padding: 18px 20px; background: #fff; }
+  .creds .pw { font: 700 24px var(--mono); letter-spacing: 2px; color: var(--peacock-deep); }
+  .panel { position: fixed; inset: 0 0 0 auto; width: min(560px, 100%); background: var(--card); box-shadow: -20px 0 50px rgba(11, 42, 54, .18);
+           padding: 24px 26px; overflow: auto; z-index: 10; }
+  .shade { position: fixed; inset: 0; background: rgba(11, 42, 54, .25); z-index: 9; }
+  .login { max-width: 380px; margin: 14vh auto; }
+  .mono { font-family: var(--mono); font-size: 12.5px; }
+  .scroll { max-height: 360px; overflow: auto; }
+  .hidden { display: none !important; }
+  @media (max-width: 700px) { .top { gap: 10px; padding: 0 14px; } .brand small { display: none; } main { padding: 18px 14px; } .two, .three { grid-template-columns: 1fr; } }
+  @media print { .top, .panel .row, .shade { display: none; } .panel { position: static; box-shadow: none; } }
+</style>
+</head>
+<body>
+<header class="top hidden" id="top">
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 100 100" aria-hidden="true"><g fill="#7FD3EE" stroke="#7FD3EE" stroke-width="7" stroke-linejoin="round"><path d="M10 89L41 12H59L90 89H74L50 33L26 89Z"/></g><path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F2A33A"/></svg>
+    Arscio <small>control panel</small>
+  </div>
+  <nav aria-label="Sections">
+    <button data-tab="health" aria-current="page">Health</button>
+    <button data-tab="schools">Schools</button>
+    <button data-tab="activity">Activity</button>
+  </nav>
+  <div class="who"><span id="checked"></span><button class="link" id="logout">Log out</button></div>
+</header>
+
+<main>
+  <section id="login" class="login hidden">
+    <div class="card">
+      <h1>Arscio control</h1>
+      <p class="sub">For the Arscio team only.</p>
+      <form id="loginForm">
+        <div class="f"><label for="pw">Control panel password</label><input id="pw" type="password" autocomplete="current-password" required autofocus></div>
+        <p class="err" id="loginErr" role="alert"></p>
+        <button class="btn primary">Log in</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="health" class="hidden"></section>
+  <section id="schools" class="hidden"></section>
+  <section id="activity" class="hidden"></section>
+</main>
+
+<div class="shade hidden" id="shade"></div>
+<aside class="panel hidden" id="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle"></aside>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const when = (iso) => {
+  if (!iso) return '-';
+  const d = new Date(iso), s = (Date.now() - d) / 1000;
+  const ago = s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} days ago`;
+  return `<span title="${esc(d.toLocaleString('en-IN'))}">${ago}</span>`;
+};
+const dateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
+const phone = (p) => p ? String(p).replace(/^\+91(\d{5})(\d{5})$/, '$1 $2') : '';
+const mb = (b) => b < 1048576 ? `${Math.round(b / 1024)} KB` : `${(b / 1048576).toFixed(1)} MB`;
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { 'content-type': 'application/json' }, credentials: 'same-origin' });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== '/api/login') { showLogin(); throw new Error('Please log in'); }
+  if (!r.ok) throw new Error(data.error?.message || `Error ${r.status}`);
+  return data;
+}
+
+// ---------------- navigation ----------------
+let tab = 'health', timer = null;
+function show(name) {
+  tab = name;
+  for (const s of ['health', 'schools', 'activity']) $('#' + s).classList.toggle('hidden', s !== name);
+  document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === name ? 'page' : 'false'));
+  ({ health: loadHealth, schools: loadSchools, activity: loadActivity })[name]();
+}
+document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab)));
+function showLogin() {
+  clearInterval(timer);
+  $('#top').classList.add('hidden'); ['health', 'schools', 'activity'].forEach((s) => $('#' + s).classList.add('hidden'));
+  $('#login').classList.remove('hidden'); $('#pw').focus();
+}
+function showApp() {
+  $('#login').classList.add('hidden'); $('#top').classList.remove('hidden');
+  show(tab);
+  clearInterval(timer);
+  timer = setInterval(() => { if (tab === 'health' && !document.hidden) loadHealth(); }, 30000);
+}
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('#loginErr').textContent = '';
+  try { await api('/api/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) }); $('#pw').value = ''; showApp(); }
+  catch (err) { $('#loginErr').textContent = err.message; }
+});
+$('#logout').addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }); showLogin(); });
+
+// ---------------- Health ----------------
+async function loadHealth() {
+  const el = $('#health');
+  let h, e;
+  try { [h, e] = await Promise.all([api('/api/health'), api('/api/errors')]); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
+  $('#checked').textContent = 'Checked ' + new Date(h.checkedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const bad = h.warnings.filter((w) => w.level === 'bad').length;
+  const level = bad ? 'bad' : h.warnings.length ? 'warn' : 'ok';
+  const headline = level === 'ok' ? 'Everything is working.' : bad ? `${bad} serious problem${bad === 1 ? '' : 's'} need attention.` : `${h.warnings.length} thing${h.warnings.length === 1 ? '' : 's'} to keep an eye on.`;
+  const m = h.machine, memUsed = m.memory.totalMb ? Math.round((1 - m.memory.availableMb / m.memory.totalMb) * 100) : 0;
+  const barCls = (p) => p >= 90 ? 'bar hot' : p >= 75 ? 'bar mid' : 'bar';
+  const stateBadge = (s) => s === 'active' ? '<span class="pill good">Running</span>' : s === 'unknown' ? '<span class="pill">Unknown</span>' : `<span class="pill bad">${esc(s)}</span>`;
+  const lastB = h.backups.last;
+  el.innerHTML = `
+    <div class="status ${level}" role="status"><span class="dot"></span><div>
+      <strong>${headline}</strong>
+      ${h.warnings.length ? `<ul>${h.warnings.map((w) => `<li class="${w.level}">${esc(w.text)}</li>`).join('')}</ul>`
+        : `<span class="muted">Server answered in ${h.api.ms} ms. Website answered in ${h.web.ms} ms.</span>`}
+    </div></div>
+    <div class="grid">
+      <div class="card">
+        <h2>Services</h2>
+        <table><thead><tr><th>Service</th><th>State</th><th>Running since</th><th>Restarts</th></tr></thead><tbody>
+        ${h.services.map((s) => `<tr><td>${esc(s.label)}<div class="small muted mono">${esc(s.unit)}${s.memoryMb != null ? ` · ${s.memoryMb} MB` : ''}</div></td>
+          <td>${stateBadge(s.state)}</td><td class="small">${s.state === 'active' ? when(s.since) : '-'}</td>
+          <td class="num">${s.restarts ?? '-'}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div class="card">
+        <h2>Server</h2>
+        <dl class="kv">
+          <dt>Server up since</dt><dd>${when(m.upSince)}</dd>
+          <dt>Memory</dt><dd><div class="${barCls(memUsed)}"><span style="width:${memUsed}%"></span></div><span class="small">${memUsed}% used · ${m.memory.availableMb} MB free of ${m.memory.totalMb} MB${m.swap.totalMb ? ` · swap ${m.swap.usedMb}/${m.swap.totalMb} MB` : ''}</span></dd>
+          <dt>Disk</dt><dd><div class="${barCls(m.disk.usedPct)}"><span style="width:${m.disk.usedPct}%"></span></div><span class="small">${m.disk.usedPct}% used · ${m.disk.freeGb} GB free of ${m.disk.totalGb} GB</span></dd>
+          <dt>Database</dt><dd>${esc(h.database.size)}</dd>
+          <dt>Busy-ness</dt><dd class="small">${m.load.join(' / ')} <span class="muted">(1, 5, 15 min; ${m.cpus} processor${m.cpus === 1 ? '' : 's'})</span></dd>
+        </dl>
+      </div>
+      <div class="card">
+        <h2>Backups</h2>
+        ${!h.backups.found ? `<p class="muted">The backup folder <span class="mono">${esc(h.backups.folder)}</span> doesn't exist yet. It is made by the first daily backup.</p>` : `
+        <dl class="kv">
+          <dt>Last backup</dt><dd>${lastB ? `${lastB.ok ? '<span class="pill good">Worked</span>' : '<span class="pill bad">Failed</span>'} ${when(lastB.at)}${lastB.error ? `<div class="small" style="color:var(--bad)">${esc(lastB.error)}</div>` : ''}` : '-'}</dd>
+          <dt>Kept</dt><dd>${h.backups.files.length} file${h.backups.files.length === 1 ? '' : 's'} in <span class="mono small">${esc(h.backups.folder)}</span></dd>
+        </dl>
+        <div class="scroll" style="max-height:160px;margin-top:10px"><table><tbody>${h.backups.files.slice(0, 8).map((f) => `<tr><td class="mono">${esc(f.name)}</td><td class="num small">${f.sizeMb} MB</td><td class="small">${dateTime(f.at)}</td></tr>`).join('')}</tbody></table></div>`}
+      </div>
+      <div class="card">
+        <h2>Background jobs</h2>
+        ${h.jobs.length ? `<table><thead><tr><th>Job</th><th>Last run</th><th>Result</th></tr></thead><tbody>
+          ${h.jobs.map((j) => `<tr><td>${esc(j.name)}</td><td class="small">${when(j.last_run_at)}</td><td>${j.last_error ? `<span class="pill bad">Failed</span><div class="small">${esc(j.last_error)}</div>` : '<span class="pill good">OK</span>'}</td></tr>`).join('')}
+        </tbody></table>` : '<p class="muted">No job has reported yet.</p>'}
+        <p class="small muted" style="margin-bottom:0">${h.queuedNotifications ? `${h.queuedNotifications} phone notifications waiting more than 5 minutes.` : 'No phone notifications are stuck.'}</p>
+      </div>
+      <div class="card wide">
+        <div class="row between"><h2>Crashes <span class="muted small">(last 30 days)</span></h2></div>
+        ${h.crashes.length ? `<div class="scroll"><table><thead><tr><th>When</th><th>Service</th><th>What happened</th></tr></thead><tbody>
+          ${h.crashes.map((c) => `<tr><td class="small nowrap">${dateTime(c.at)}</td><td class="small">${esc(c.unit)}</td><td class="mono">${esc(c.text)}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="muted">No crashes. (If the server has just been set up, this fills in over time.)</p>'}
+      </div>
+      <div class="card wide">
+        <h2>Errors <span class="muted small">(${h.errors.last24h} in the last 24 hours)</span></h2>
+        ${e.errors.length ? `<div class="scroll"><table><thead><tr><th>When</th><th>Page</th><th>School</th><th>Message</th></tr></thead><tbody>
+          ${e.errors.map((x) => `<tr><td class="small">${dateTime(x.at)}</td><td class="mono">${esc(x.method)} ${esc(x.route)}</td><td class="small">${esc(x.school ?? '-')}</td><td class="mono">${esc(x.message)}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="muted">No server errors recorded.</p>'}
+        ${e.logLines.length ? `<details style="margin-top:12px"><summary class="small">Error lines from the service logs (${e.logLines.length})</summary>
+          <div class="scroll"><table><tbody>${e.logLines.map((l) => `<tr><td class="small">${dateTime(l.at)}</td><td class="mono">${esc(l.text)}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
+      </div>
+    </div>`;
+}
+
+// ---------------- Schools ----------------
+let schoolsData = null;
+async function loadSchools() {
+  const el = $('#schools');
+  try { schoolsData = await api('/api/schools'); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
+  const s = schoolsData.schools;
+  el.innerHTML = `
+    <div class="row between" style="margin-bottom:18px">
+      <div><h1>Schools</h1><p class="sub" style="margin:0">${s.length} school${s.length === 1 ? '' : 's'} on Arscio. Logins are ${schoolsData.loginMode === 'password' ? 'by password (no SMS)' : 'by SMS code'}.</p></div>
+      <button class="btn primary" id="newSchool">Onboard a school</button>
+    </div>
+    ${s.length ? `<div class="card"><table><thead><tr><th>School</th><th>Owner</th><th class="num">Students</th><th class="num">Staff</th><th>Families logged in</th><th>Last used</th><th>Files</th><th></th></tr></thead><tbody>
+      ${s.map((x) => `<tr>
+        <td><strong>${esc(x.name)}</strong> ${x.status === 'active' ? '' : '<span class="pill bad">Paused</span>'}<div class="small muted">${esc(x.code)} · ${esc(x.board)} · since ${new Date(x.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></td>
+        <td>${esc(x.ownerName ?? '-')}<div class="small muted">${esc(x.ownerEmail ?? '')} ${esc(phone(x.ownerPhone))}</div>${x.ownerLoggedIn ? '' : '<span class="pill warn">Not logged in yet</span>'}</td>
+        <td class="num">${x.students}</td><td class="num">${x.staff}</td>
+        <td class="small">${x.families ? `${x.familiesLoggedIn} of ${x.families}` : '-'}</td>
+        <td class="small">${when(x.lastActive)}</td>
+        <td class="small num">${mb(Number(x.storageBytes))}</td>
+        <td><div class="row" style="justify-content:flex-end">
+          <button class="btn" data-pw="${x.id}" data-name="${esc(x.name)}">New owner password</button>
+          ${x.status === 'active' ? `<button class="btn danger" data-pause="${x.id}" data-name="${esc(x.name)}">Pause</button>` : `<button class="btn" data-resume="${x.id}">Resume</button>`}
+        </div></td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="card"><p>No schools yet. <strong>Onboard a school</strong> creates the school with its classes and settings, and the owner's login.</p></div>`}`;
+  $('#newSchool').addEventListener('click', openNewSchool);
+  el.querySelectorAll('[data-pause]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm(`Pause ${b.dataset.name}? Nobody at this school (staff or parents) can use Arscio until you resume it. Nothing is deleted.`)) return;
+    await api(`/api/schools/${b.dataset.pause}/status`, { method: 'POST', body: JSON.stringify({ status: 'suspended' }) }); loadSchools();
+  }));
+  el.querySelectorAll('[data-resume]').forEach((b) => b.addEventListener('click', async () => {
+    await api(`/api/schools/${b.dataset.resume}/status`, { method: 'POST', body: JSON.stringify({ status: 'active' }) }); loadSchools();
+  }));
+  el.querySelectorAll('[data-pw]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm(`Give the owner of ${b.dataset.name} a new one-time password? Their current password stops working and they are logged out everywhere.`)) return;
+    try {
+      const r = await api(`/api/schools/${b.dataset.pw}/owner-password`, { method: 'POST' });
+      const x = schoolsData.schools.find((s) => s.id === b.dataset.pw);
+      openPanel('New owner password', credsHtml(x.name, x.ownerName, x.ownerEmail, x.ownerPhone, r.password, null));
+    } catch (err) { alert(err.message); }
+  }));
+}
+
+function credsHtml(school, owner, email, tel, password, website) {
+  return `<div class="creds">
+    <p class="small muted" style="margin-top:0">Give these to the owner privately (in person or a phone call). The password is shown only now.</p>
+    <dl class="kv">
+      <dt>School</dt><dd><strong>${esc(school)}</strong></dd>
+      <dt>Owner</dt><dd>${esc(owner)}</dd>
+      ${website ? `<dt>Website</dt><dd>${esc(website)}</dd>` : ''}
+      <dt>Log in with</dt><dd>${[email, phone(tel)].filter(Boolean).map(esc).join(' or ')}</dd>
+      <dt>Password</dt><dd>${password ? `<span class="pw">${esc(password)}</span>` : '<span class="muted">their existing Arscio password</span>'}</dd>
+    </dl>
+    ${password ? '<p class="small" style="margin-bottom:0">It works once: after logging in they must choose their own password.</p>' : ''}
+  </div>
+  <div class="row" style="margin-top:16px">
+    <button class="btn" onclick="window.print()">Print</button>
+    <button class="btn" id="copyCreds">Copy</button>
+    <button class="btn primary" onclick="closePanel()">Done</button>
+  </div>`;
+}
+
+function openNewSchool() {
+  const d = schoolsData.defaults;
+  openPanel('Onboard a school', `
+    <form id="schoolForm" novalidate>
+      <div class="f"><label for="sName">School name</label><input id="sName" required maxlength="120" placeholder="Green Valley Public School, Dhubri"></div>
+      <div class="two">
+        <div class="f"><label for="sCode">Short code</label><input id="sCode" required maxlength="20" placeholder="GVPS-DHUBRI" style="text-transform:uppercase"><span class="hint">Letters, numbers, dashes. Can't be changed later.</span></div>
+        <div class="f"><label for="sBoard">Board</label><select id="sBoard"><option>CBSE</option><option>SEBA</option><option>ICSE</option><option>State board</option><option>Other</option></select></div>
+      </div>
+      <div class="f"><label for="sAddr">Address (optional)</label><input id="sAddr" maxlength="300" placeholder="Ward 4, Dhubri, Assam 783301"></div>
+      <h2 style="margin-top:18px">Owner</h2>
+      <div class="f"><label for="oName">Owner's name</label><input id="oName" required maxlength="80"></div>
+      <div class="two">
+        <div class="f"><label for="oPhone">Mobile number</label><input id="oPhone" required inputmode="tel" placeholder="98765 43210"></div>
+        <div class="f"><label for="oEmail">Email</label><input id="oEmail" type="email" maxlength="120"><span class="hint">They can log in with email or mobile.</span></div>
+      </div>
+      <h2 style="margin-top:18px">School session</h2>
+      <div class="three">
+        <div class="f"><label for="yName">Name</label><input id="yName" value="${esc(d.name)}"></div>
+        <div class="f"><label for="yFrom">Starts</label><input id="yFrom" type="date" value="${d.startsOn}"></div>
+        <div class="f"><label for="yTo">Ends</label><input id="yTo" type="date" value="${d.endsOn}"></div>
+      </div>
+      <p class="hint">Arscio sets up Nursery, LKG, UKG and Classes 1 to 10, the CBSE grade scale and the usual document checklist. The school can change all of it.</p>
+      <p class="err" id="schoolErr" role="alert"></p>
+      <div class="row"><button class="btn primary" id="createBtn">Create school and owner login</button><button type="button" class="btn" onclick="closePanel()">Cancel</button></div>
+    </form>`);
+  $('#sName').focus();
+  $('#schoolForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('#schoolErr').textContent = ''; $('#createBtn').disabled = true;
+    const body = { name: $('#sName').value, code: $('#sCode').value, board: $('#sBoard').value, address: $('#sAddr').value,
+      ownerName: $('#oName').value, ownerPhone: $('#oPhone').value, ownerEmail: $('#oEmail').value,
+      session: { name: $('#yName').value, startsOn: $('#yFrom').value, endsOn: $('#yTo').value } };
+    try {
+      const r = await api('/api/schools', { method: 'POST', body: JSON.stringify(body) });
+      openPanel('School created', (r.note ? `<p class="small">${esc(r.note)}</p>` : '') +
+        credsHtml(body.name, body.ownerName, r.login.email, r.login.phone, r.password, r.login.website));
+      loadSchools();
+    } catch (err) { $('#schoolErr').textContent = err.message; $('#createBtn').disabled = false; }
+  });
+}
+// ---------------- Activity ----------------
+async function loadActivity() {
+  const el = $('#activity');
+  let a;
+  try { a = await api('/api/activity'); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
+  const ACTIONS = { school_created: 'School onboarded', school_paused: 'School paused', school_resumed: 'School resumed', owner_password_reset: 'Owner password reset', control_login: 'Control panel login' };
+  el.innerHTML = `
+    <h1>Activity</h1><p class="sub">The last 14 days, across all schools.</p>
+    <div class="grid">
+      <div class="card wide"><table><thead><tr><th>Day</th><th class="num">People using Arscio</th><th class="num">Attendance taken</th><th class="num">Fee receipts</th><th class="num">Marks entered</th><th class="num">Messages sent</th><th class="num">Errors</th></tr></thead><tbody>
+        ${a.days.map((d) => `<tr><td>${new Date(d.day + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</td>
+          <td class="num">${d.activePeople}</td><td class="num">${d.attendanceTaken}</td><td class="num">${d.receipts}</td><td class="num">${d.marksEntered}</td>
+          <td class="num">${d.messagesSent}</td><td class="num">${d.errors ? `<span class="pill bad">${d.errors}</span>` : 0}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="card wide"><h2>Done in this control panel</h2>
+        ${a.recent.length ? `<table><tbody>${a.recent.map((r) => `<tr><td class="small">${dateTime(r.at)}</td><td>${esc(ACTIONS[r.action] ?? r.action)}</td><td class="small muted">${esc(r.school ?? '')}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing yet.</p>'}
+      </div>
+    </div>`;
+}
+
+// ---------------- side panel ----------------
+function openPanel(title, html) {
+  $('#panel').innerHTML = `<h1 id="panelTitle" style="font-size:22px;margin-bottom:16px">${esc(title)}</h1>${html}`;
+  $('#panel').classList.remove('hidden'); $('#shade').classList.remove('hidden');
+  const copy = $('#copyCreds');
+  if (copy && !copy.dataset.wired) {
+    copy.dataset.wired = '1';
+    copy.addEventListener('click', () => navigator.clipboard.writeText($('#panel .creds').innerText).then(() => { copy.textContent = 'Copied'; }));
+  }
+}
+function closePanel() { $('#panel').classList.add('hidden'); $('#shade').classList.add('hidden'); }
+$('#shade').addEventListener('click', closePanel);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+
+api('/api/me').then((r) => (r.loggedIn ? showApp() : showLogin())).catch(showLogin);
+</script>
+</body>
+</html>

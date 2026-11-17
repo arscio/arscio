@@ -6,16 +6,18 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { classLabel, type Structure } from '@/lib/types';
 import { ErrorBox, Field, PhoneInput } from './ui';
+import { PhotoPicker } from './StudentFile';
 
 export interface StudentValues {
   admissionNo: string; firstName: string; lastName: string; dateOfBirth: string; gender: string;
   bloodGroup: string; admissionDate: string; sectionId: string; rollNo: string; status?: string;
+  aadhaarLast4?: string; photo?: string | null;
   family: { phone: string; fatherName: string; motherName: string; guardianName: string; altPhone: string; address: string };
 }
 
 export const emptyStudent: StudentValues = {
   admissionNo: '', firstName: '', lastName: '', dateOfBirth: '', gender: '', bloodGroup: '', admissionDate: '',
-  sectionId: '', rollNo: '',
+  sectionId: '', rollNo: '', aadhaarLast4: '', photo: null,
   family: { phone: '', fatherName: '', motherName: '', guardianName: '', altPhone: '', address: '' },
 };
 
@@ -27,7 +29,13 @@ export function StudentForm({ initial, editing, onSubmit, submitLabel }: {
   const [structure, setStructure] = useState<Structure | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [nextNo, setNextNo] = useState<string | null>(null);
   useEffect(() => { api.get<Structure>('/setup/structure').then(setStructure); }, []);
+  const admYear = (v.admissionDate || new Date().toISOString()).slice(0, 4);
+  useEffect(() => {
+    if (editing) return;
+    api.get<{ next: string }>(`/students/admission-number?year=${admYear}`).then((r) => setNextNo(r.next)).catch(() => setNextNo(null));
+  }, [editing, admYear]);
 
   const set = (k: keyof StudentValues, val: string) => setV({ ...v, [k]: val });
   const setF = (k: keyof StudentValues['family'], val: string) => setV({ ...v, family: { ...v.family, [k]: val } });
@@ -44,10 +52,15 @@ export function StudentForm({ initial, editing, onSubmit, submitLabel }: {
     <form className="stack" style={{ gap: 22 }} onSubmit={submit}>
       <ErrorBox error={error} />
       <div className="sheet sheet-pad stack">
-        <h2>Student</h2>
+        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <h2>Student</h2>
+          {!editing ? <PhotoPicker value={v.photo ?? null} onChange={(p) => setV({ ...v, photo: p })} /> : null}
+        </div>
         <div className="grid-3">
-          <Field label="Admission number" htmlFor="adm">
-            <input id="adm" className="input" required value={v.admissionNo} onChange={(e) => set('admissionNo', e.target.value)} />
+          <Field label="Admission number" htmlFor="adm"
+            hint={editing ? undefined : nextNo ? `Leave blank to give ${nextNo}. Type one only for older students.` : 'Leave blank to give the next number.'}>
+            <input id="adm" className="input num" required={editing} placeholder={editing ? undefined : nextNo ?? ''}
+              value={v.admissionNo} onChange={(e) => set('admissionNo', e.target.value)} />
           </Field>
           <Field label="First name" htmlFor="fn">
             <input id="fn" className="input" required value={v.firstName} onChange={(e) => set('firstName', e.target.value)} />
@@ -55,7 +68,8 @@ export function StudentForm({ initial, editing, onSubmit, submitLabel }: {
           <Field label="Last name" htmlFor="ln">
             <input id="ln" className="input" value={v.lastName} onChange={(e) => set('lastName', e.target.value)} />
           </Field>
-          <Field label="Date of birth" htmlFor="dob">
+          <Field label="Date of birth" htmlFor="dob"
+            hint={v.dateOfBirth ? "Also the parent's first app password (DDMMYYYY)." : 'Missing: the parent cannot log in to the app until this is added.'}>
             <input id="dob" type="date" className="input" value={v.dateOfBirth} onChange={(e) => set('dateOfBirth', e.target.value)} />
           </Field>
           <Field label="Gender" htmlFor="g">
@@ -66,6 +80,12 @@ export function StudentForm({ initial, editing, onSubmit, submitLabel }: {
           {!editing ? (
             <Field label="Admission date" htmlFor="ad">
               <input id="ad" type="date" className="input" value={v.admissionDate} onChange={(e) => set('admissionDate', e.target.value)} />
+            </Field>
+          ) : null}
+          {!editing ? (
+            <Field label="Aadhaar, last 4 digits" htmlFor="aad" hint="Optional. The full number is never stored.">
+              <input id="aad" className="input num" inputMode="numeric" placeholder="e.g. 4821" value={v.aadhaarLast4 ?? ''}
+                onChange={(e) => set('aadhaarLast4', e.target.value.replace(/\D/g, '').slice(-4))} />
             </Field>
           ) : null}
         </div>
@@ -136,11 +156,11 @@ export function toPayload(v: StudentValues, editing: boolean) {
     guardianName: blank(v.family.guardianName), altPhone: blank(v.family.altPhone), address: blank(v.family.address),
   };
   return {
-    admissionNo: v.admissionNo.trim(), firstName: v.firstName.trim(), lastName: blank(v.lastName),
+    admissionNo: v.admissionNo.trim() || (editing ? v.admissionNo : null), firstName: v.firstName.trim(), lastName: blank(v.lastName),
     dateOfBirth: blank(v.dateOfBirth), gender: blank(v.gender), sectionId: v.sectionId,
     rollNo: v.rollNo ? Number(v.rollNo) : null,
     ...(editing ? { status: v.status, family } : {
-      admissionDate: blank(v.admissionDate), bloodGroup: blank(v.bloodGroup), family: { ...family, phone: v.family.phone },
+      admissionDate: blank(v.admissionDate), bloodGroup: blank(v.bloodGroup), aadhaarLast4: blank(v.aadhaarLast4 ?? ''), family: { ...family, phone: v.family.phone },
     }),
   };
 }

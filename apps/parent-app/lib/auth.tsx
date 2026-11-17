@@ -12,17 +12,18 @@ export interface Child {
   class_name: string | null; section_name: string | null; roll_no: number | null;
   schoolId: string; schoolName: string; schoolShortName: string | null; schoolLogoUrl: string | null; schoolColor: string | null;
 }
-interface Me { account: { id: string; name: string; phone: string } }
+interface Me { account: { id: string; name: string; phone: string; mustChangePassword?: boolean } }
 
 type State =
   | { status: 'loading' }
   | { status: 'out' }
+  | { status: 'change'; me: Me } // first login (date of birth) or after a reset: must choose their own password
   | { status: 'in'; me: Me; children: Child[]; childId: string | null };
 
 const Ctx = createContext<{
   state: State;
   child: Child | null;
-  /** The school's colour, or AIEdu emerald if the school hasn't set one. */
+  /** The school's colour, or Arscio emerald if the school hasn't set one. */
   accent: string;
   afterLogin: () => Promise<void>;
   selectChild: (id: string) => void;
@@ -44,7 +45,7 @@ const rawLock = (Constants.expoConfig?.extra as { brand?: { lockToSchoolId?: unk
 const lockedSchool: string | null =
   typeof rawLock === 'string' && /^[0-9a-f-]{36}$/i.test(rawLock) ? rawLock : null;
 
-function goFresh(path: '/' | '/login') {
+function goFresh(path: '/' | '/login' | '/change-password') {
   if (router.canDismiss()) router.dismissAll();
   router.replace(path);
 }
@@ -54,6 +55,7 @@ export function ParentProvider({ children: kids }: { children: ReactNode }) {
 
   const enter = useCallback(async () => {
     const me = await call<Me>('GET', '/me');
+    if (me.account.mustChangePassword) { setState({ status: 'change', me }); goFresh('/change-password'); return; }
     let list = (await call<{ children: Child[] }>('GET', '/me/children')).children;
     if (lockedSchool) list = list.filter((c) => c.schoolId === lockedSchool);
     const saved = session.schoolId; // (we store the selected child's id here)

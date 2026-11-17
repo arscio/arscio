@@ -1,9 +1,9 @@
 // Give homework: choose the class and subject, write it, pick when it's due.
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
-import { C, classLabel } from '@/lib/theme';
+import { C, SH, classLabel } from '@/lib/theme';
 import { Button, Card, ErrorText, Input, Loading, T } from '@/components/ui';
 import { shortDate } from './index';
 
@@ -18,13 +18,14 @@ const addDays = (n: number) => { const d = new Date(`${todayIST()}T00:00:00Z`); 
 function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
     <Pressable accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={label} onPress={onPress}
-      style={[s.chip, on && { backgroundColor: C.ink, borderColor: C.ink }]}>
+      style={[s.chip, on && { backgroundColor: C.board, ...SH.glow(C.board) }]}>
       <T bold size={15} style={{ color: on ? '#fff' : C.ink }}>{label}</T>
     </Pressable>
   );
 }
 
 export default function NewHomework() {
+  const params = useLocalSearchParams<{ sectionId?: string }>();
   const [classes, setClasses] = useState<ClassOption[] | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [sectionId, setSectionId] = useState<string | null>(null);
@@ -40,7 +41,9 @@ export default function NewHomework() {
     call<{ sections: ClassOption[] }>('GET', '/teacher/classes').then((r) => {
       setClasses(r.sections);
       const mine = r.sections.filter((x) => x.mine);
-      if (mine.length === 1) pickClass(mine[0]!);
+      const asked = params.sectionId ? r.sections.find((x) => x.sectionId === params.sectionId) : undefined;
+      if (asked) pickClass(asked);
+      else if (mine.length === 1) pickClass(mine[0]!);
       if (mine.length === 0) setShowAll(true);
     }).catch((e) => setError(e instanceof ApiError ? e.message : 'Could not load'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -60,7 +63,7 @@ export default function NewHomework() {
   if (sent !== null) {
     return (
       <View style={{ padding: 16, gap: 14 }}>
-        <Card style={{ gap: 8, borderLeftWidth: 4, borderLeftColor: C.board }}>
+        <Card style={{ gap: 8 }}>
           <T display size={22}>Homework sent</T>
           <T size={17}>{label}: {title}</T>
           <T soft>{sent > 0 ? `${sent} ${sent === 1 ? 'family' : 'families'} will see it in the parent app.` : 'No parents in this class use the app yet.'}</T>
@@ -131,5 +134,5 @@ export default function NewHomework() {
 
 const s = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, minHeight: 44, borderRadius: 8, borderWidth: 1, borderColor: C.ruleStrong, backgroundColor: '#fff', justifyContent: 'center' },
+  chip: { minHeight: 46, paddingHorizontal: 16, borderRadius: 14, backgroundColor: '#F6FAFC', alignItems: 'center', justifyContent: 'center', ...SH.raised },
 });

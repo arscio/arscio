@@ -1,5 +1,5 @@
 {
-  "name": "@aiedu/api",
+  "name": "@arscio/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,23 +9,32 @@
     "migrate": "tsx --env-file=.env src/migrate.ts",
     "create-school": "tsx --env-file=.env src/scripts/create-school.ts",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "demo": "tsx --env-file=.env src/scripts/demo.ts",
+    "demo:school": "tsx --env-file=.env src/scripts/demo-school.ts",
+    "demo:reset": "tsx --env-file=.env src/scripts/reset-db.ts && tsx --env-file=.env src/scripts/demo-school.ts"
   },
   "dependencies": {
-    "@aiedu/shared": "workspace:*",
+    "@arscio/shared": "workspace:*",
     "@fastify/cors": "^11",
     "@fastify/helmet": "^13.0.1",
     "@fastify/rate-limit": "^10.2.2",
     "@node-rs/argon2": "^2.0.2",
+    "exceljs": "^4.4.0",
     "fastify": "^5.2.1",
     "jose": "^5.9.6",
+    "jszip": "^3.10.2",
+    "pdfkit": "^0.20.2",
     "pg": "^8.13.1",
+    "qrcode": "^1.5.4",
     "tsx": "^4.19.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/pdfkit": "^0.17.7",
     "@types/pg": "^8.11.10",
+    "@types/qrcode": "^1.5.6",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

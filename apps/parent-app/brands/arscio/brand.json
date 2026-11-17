@@ -1,0 +1,12 @@
+{
+  "id": "arscio",
+  "name": "Arscio Parent",
+  "slug": "arscio-parent",
+  "scheme": "arscio-parent",
+  "iosBundleId": "com.arscio.parent",
+  "androidPackage": "com.arscio.parent",
+  "splashBackground": "#EEF4F7",
+  "androidIconBackground": "#F2A33A",
+  "lockToSchoolId": "",
+  "note": "Default build: one app for every school. Each school's logo, name and colour appear inside the app after login."
+}

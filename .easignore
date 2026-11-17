@@ -1,0 +1,18 @@
+# What NOT to upload to Expo's build service when building the phone apps
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+dist/
+.expo/
+**/.expo/
+.demo-logs/
+deploy/out/
+_to_delete/
+coverage/
+*.log
+.env
+**/.env
+.env.*
+!.env.example
+.DS_Store

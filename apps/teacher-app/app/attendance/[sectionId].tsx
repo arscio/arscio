@@ -2,11 +2,11 @@
 // Fastest way for a teacher: tap "Everyone present", then tap A for the few who are absent, then Save.
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, call } from '@/lib/api';
-import { C, classLabel, longDate } from '@/lib/theme';
-import { Button, Card, ErrorText, Loading, T } from '@/components/ui';
+import { C, SH, classLabel, longDate } from '@/lib/theme';
+import { Avatar, Button, Card, ErrorText, Loading, T } from '@/components/ui';
 import type { Today } from '../index';
 
 type Status = 'present' | 'absent' | 'late' | 'leave';
@@ -14,14 +14,14 @@ interface Sheet {
   section: { className: string; sectionName: string };
   date: string; period: number;
   session: { takenAt: string; takenBy: string } | null;
-  students: { id: string; firstName: string; lastName: string | null; rollNo: number | null; status: Status | 'half_day' | null }[];
+  students: { id: string; firstName: string; lastName: string | null; rollNo: number | null; photoUrl?: string | null; status: Status | 'half_day' | null }[];
 }
 
 const OPTIONS: { value: Status; short: string; label: string; bg: string; fg: string }[] = [
-  { value: 'present', short: 'P', label: 'Present', bg: C.board, fg: '#fff' },
-  { value: 'absent', short: 'A', label: 'Absent', bg: C.red, fg: '#fff' },
-  { value: 'late', short: 'Late', label: 'Late', bg: C.ink, fg: '#fff' },
-  { value: 'leave', short: 'Leave', label: 'On leave', bg: C.marigold, fg: '#fff' },
+  { value: 'present', short: 'P', label: 'Present', bg: C.lagoon, fg: '#fff' },
+  { value: 'absent', short: 'A', label: 'Absent', bg: C.gold, fg: C.goldInk },
+  { value: 'late', short: 'Late', label: 'Late', bg: C.board, fg: '#fff' },
+  { value: 'leave', short: 'L', label: 'On leave', bg: '#fff', fg: C.ink },
 ];
 
 export default function AttendanceScreen() {
@@ -89,7 +89,7 @@ export default function AttendanceScreen() {
     return (
       <View style={{ padding: 16, gap: 14 }}>
         <Stack.Screen options={{ title }} />
-        <Card style={{ gap: 8, borderLeftWidth: 4, borderLeftColor: C.board }}>
+        <Card style={{ gap: 8 }}>
           <T display size={22}>Attendance saved</T>
           <T size={17}>{title}{sheet.period ? `, period ${sheet.period}` : ''}: {done.present} present, {done.absent} absent{done.leave ? `, ${done.leave} on leave` : ''}.</T>
           {done.parentAlerts > 0
@@ -128,9 +128,9 @@ export default function AttendanceScreen() {
                     return (
                       <Pressable key={p} accessibilityRole="button" accessibilityState={{ selected: on }}
                         accessibilityLabel={`Period ${p}${takenHere ? ', taken' : ''}`} onPress={() => setPeriod(p)}
-                        style={[s.periodChip, on && { backgroundColor: C.ink, borderColor: C.ink }]}>
+                        style={[s.periodChip, on && { backgroundColor: C.board, ...SH.glow(C.board) }]}>
                         <T bold style={{ color: on ? '#fff' : C.ink }}>{p}</T>
-                        {takenHere ? <View style={[s.dot, { backgroundColor: on ? '#fff' : C.board }]} /> : null}
+                        {takenHere ? <View style={[s.dot, { backgroundColor: on ? '#fff' : C.lagoon }]} /> : null}
                       </Pressable>
                     );
                   })}
@@ -153,11 +153,11 @@ export default function AttendanceScreen() {
         renderItem={({ item, index }) => {
           const v = marks[item.id];
           return (
-            <View style={[s.row, index === 0 && { borderTopWidth: 1 }, v === 'absent' && { backgroundColor: C.redWash }]}>
-              <View style={s.roll}><T soft size={15}>{item.rollNo ?? '-'}</T></View>
-              <View style={{ flex: 1, paddingRight: 8 }}>
-                <T bold size={16} numberOfLines={2}>{item.firstName} {item.lastName ?? ''}</T>
-                {!v ? <T size={13} style={{ color: '#7a520a' }}>Not marked</T> : null}
+            <View style={[s.row, v === 'absent' && { backgroundColor: C.marigoldWash }]}>
+              <Avatar name={`${item.firstName} ${item.lastName ?? ''}`} uri={item.photoUrl} size={40} />
+              <View style={{ flex: 1, paddingRight: 4 }}>
+                <T bold size={15} numberOfLines={2}>{item.firstName} {item.lastName ?? ''}</T>
+                <T size={12} style={{ color: v ? C.inkSoft : C.marigold }}>Roll {item.rollNo ?? '-'}{v ? '' : ' · not marked'}</T>
               </View>
               <View style={s.options} accessibilityRole="radiogroup" accessibilityLabel={`${item.firstName}'s attendance`}>
                 {OPTIONS.map((o) => {
@@ -166,7 +166,7 @@ export default function AttendanceScreen() {
                     <Pressable key={o.value} accessibilityRole="radio" accessibilityState={{ checked: on }}
                       accessibilityLabel={o.label} hitSlop={4}
                       onPress={() => setMarks({ ...marks, [item.id]: o.value })}
-                      style={[s.opt, o.short.length > 1 && { minWidth: 50 }, on && { backgroundColor: o.bg, borderColor: o.bg }]}>
+                      style={[s.opt, o.short.length > 1 && { minWidth: 46 }, on && { backgroundColor: o.bg, ...SH.glow(o.value === 'leave' ? C.ink : o.bg) }]}>
                       <T bold size={o.short.length > 1 ? 13 : 16} style={{ color: on ? o.fg : C.inkSoft }}>{o.short}</T>
                     </Pressable>
                   );
@@ -182,9 +182,9 @@ export default function AttendanceScreen() {
           <ErrorText error={error} />
           <T size={15} style={{ textAlign: 'center' }}>
             <T bold size={15}>{counts.present + counts.late}</T> present{'   '}
-            <T bold size={15} style={{ color: C.red }}>{counts.absent}</T> absent
+            <T bold size={15} style={{ color: C.marigold }}>{counts.absent}</T> absent
             {counts.leave ? <>{'   '}<T bold size={15}>{counts.leave}</T> on leave</> : null}
-            {counts.unmarked ? <>{'   '}<T bold size={15} style={{ color: '#7a520a' }}>{counts.unmarked}</T> not marked</> : null}
+            {counts.unmarked ? <>{'   '}<T bold size={15} style={{ color: C.marigold }}>{counts.unmarked}</T> not marked</> : null}
           </T>
           <Button label={counts.unmarked ? `Mark all ${counts.unmarked} to save` : 'Save attendance'} busy={busy}
             disabled={counts.unmarked > 0} onPress={save} />
@@ -196,27 +196,19 @@ export default function AttendanceScreen() {
 
 const s = StyleSheet.create({
   row: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: C.sheet, minHeight: 64,
-    borderBottomWidth: 1, borderColor: C.rule, paddingRight: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: C.sheet, minHeight: 64,
+    marginHorizontal: 16, marginBottom: 8, paddingVertical: 8, paddingLeft: 8, paddingRight: 8, borderRadius: 18, ...SH.lift,
   },
-  roll: {
-    width: 46, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center',
-    borderRightWidth: 2, borderRightColor: C.margin, marginRight: 10,
-  },
-  options: { flexDirection: 'row', gap: 6 },
-  opt: {
-    minWidth: 40, height: 44, borderRadius: 8, borderWidth: 1, borderColor: C.ruleStrong,
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, backgroundColor: '#fff',
-  },
+  options: { flexDirection: 'row', gap: 3, padding: 4, borderRadius: 14, backgroundColor: C.paper, ...SH.inset },
+  opt: { minWidth: 36, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   periodChip: {
-    width: 48, height: 48, borderRadius: 8, borderWidth: 1, borderColor: C.ruleStrong, backgroundColor: '#fff',
-    alignItems: 'center', justifyContent: 'center',
+    width: 48, height: 48, borderRadius: 14, backgroundColor: '#F6FAFC', alignItems: 'center', justifyContent: 'center', ...SH.raised,
   },
   dot: { width: 6, height: 6, borderRadius: 3, position: 'absolute', bottom: 6 },
   bar: {
-    position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.sheet, gap: 8,
-    borderTopWidth: 1, borderTopColor: C.rule, paddingHorizontal: 16, paddingTop: 10,
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 8,
+    position: 'absolute', left: 0, right: 0, bottom: 0, gap: 8, paddingHorizontal: 16, paddingTop: 12,
+    backgroundColor: Platform.OS === 'web' ? 'rgba(238,244,247,0.72)' : 'rgba(238,244,247,0.94)',
+    borderTopWidth: 1, borderTopColor: C.glassEdge,
+    ...(Platform.OS === 'web' ? ({ backdropFilter: 'blur(20px) saturate(170%)' } as object) : {}),
   },
 });
-

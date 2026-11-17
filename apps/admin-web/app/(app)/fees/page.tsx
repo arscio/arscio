@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { ApiError, api } from '@/lib/api';
+import { ApiError, api, photoSrc } from '@/lib/api';
 import { classLabel, showPhone, type StudentRow } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { FeesTabs, MODES, inr, niceDate } from '@/components/FeesTabs';
@@ -20,6 +20,8 @@ interface ReceiptRow {
 interface Concession { id: string; kind: 'percent' | 'flat'; value: string; reason: string; feeHead: string | null; approvedBy: string }
 interface Detail {
   id: string; admissionNo: string; firstName: string; lastName: string | null; sectionId: string | null;
+  rollNo: number | null; photoUrl: string | null; className: string | null; sectionName: string | null;
+  siblings: { id: string; name: string }[] | null;
   family: { phone: string; fatherName: string | null; motherName: string | null };
 }
 
@@ -87,6 +89,7 @@ function StudentFees({ studentId }: { studentId: string }) {
   const [pick, setPick] = useState<Record<string, { on: boolean; amount: string; fine: string }>>({});
   const [mode, setMode] = useState('cash');
   const [reference, setReference] = useState('');
+  const [received, setReceived] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<ReceiptRow | null>(null);
@@ -132,79 +135,111 @@ function StudentFees({ studentId }: { studentId: string }) {
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not collect'); setBusy(false); }
   };
 
+  const fullName = `${student.firstName} ${student.lastName ?? ''}`.trim();
+  const initials = fullName.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  const cashBack = mode === 'cash' && received ? Math.round((Number(received) - total) * 100) / 100 : null;
+
   return (
     <div className="stack" style={{ marginTop: 18, gap: 18 }}>
-      <div className="sheet sheet-pad row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2>{student.firstName} {student.lastName ?? ''}</h2>
-          <p className="muted small" style={{ marginTop: 4 }}>
-            Admission no. {student.admissionNo}. {[student.family.fatherName, student.family.motherName].filter(Boolean).join(', ')}. {showPhone(student.family.phone)}
-          </p>
-          {concessions.length ? (
-            <p className="small" style={{ marginTop: 6 }}>Concession: {concessions.map((c) =>
-              `${c.kind === 'percent' ? `${Number(c.value)}%` : inr(c.value)} on ${c.feeHead ?? 'all fees'} (${c.reason})`).join('; ')}</p>
-          ) : null}
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div className="total-big">{inr(owed)}</div>
-          <div className="small muted">still to pay this year</div>
-          {overdue > 0 ? <div className="small" style={{ color: 'var(--red-ink)', fontWeight: 700 }}>{inr(overdue)} overdue</div> : null}
-          {can('fees.manage_structure') ? <button className="btn btn-quiet" onClick={() => setConcessionOpen(true)}>Concessions</button> : null}
-        </div>
-      </div>
-
-      <div className="sheet table-wrap">
-        {dues.length === 0 ? (
-          <div className="empty"><h3>No fees set for this student yet</h3>
-            <p>Set the fee structure for their class and create fee lines on the Fee setup tab.</p></div>
-        ) : (
-          <>
-            <table className="register">
-              <thead><tr><th></th><th>Fee</th><th>Due</th><th className="money">Fee</th><th className="money">Concession</th><th className="money">Paid</th><th className="money">Balance</th><th className="money">Pay now</th><th className="money">Late fine</th></tr></thead>
-              <tbody>{dues.map((d) => {
-                const p = pick[d.feeDueId];
-                const late = Number(d.balance) > 0 && d.dueOn < today;
-                return (
-                  <tr key={d.feeDueId} style={Number(d.balance) === 0 ? { color: 'var(--ink-soft)' } : undefined}>
-                    <td>{p ? <input type="checkbox" aria-label={`Pay ${d.feeHead} ${d.instalment}`} checked={p.on}
-                      onChange={(e) => setPick({ ...pick, [d.feeDueId]: { ...p, on: e.target.checked } })} /> : <span className="tag tag-board">Paid</span>}</td>
-                    <td><strong>{d.feeHead}</strong><div className="small muted">{d.instalment}</div></td>
-                    <td className="small nowrap" style={late ? { color: 'var(--red-ink)', fontWeight: 700 } : undefined}>{niceDate(d.dueOn)}</td>
-                    <td className="money">{inr(d.amount)}</td>
-                    <td className="money">{Number(d.concession) ? `−${inr(d.concession)}` : '-'}</td>
-                    <td className="money">{Number(d.paid) ? inr(d.paid) : '-'}</td>
-                    <td className="money"><strong>{inr(d.balance)}</strong></td>
-                    <td className="money">{p ? <input className="input money-in" inputMode="decimal" aria-label="Amount to pay" disabled={!p.on}
-                      value={p.amount} onChange={(e) => setPick({ ...pick, [d.feeDueId]: { ...p, amount: e.target.value.replace(/[^\d.]/g, '') } })} /> : null}</td>
-                    <td className="money">{p ? <input className="input money-in" inputMode="decimal" aria-label="Late fine" disabled={!p.on}
-                      value={p.fine} onChange={(e) => setPick({ ...pick, [d.feeDueId]: { ...p, fine: e.target.value.replace(/[^\d.]/g, '') } })} /> : null}</td>
-                  </tr>
-                );
-              })}</tbody>
-            </table>
-            {open.length ? (
-              <div className="pay-bar">
-                <div className="row">
-                  <Field label="Paid by" htmlFor="mode">
-                    <select id="mode" className="input" style={{ width: 160 }} value={mode} onChange={(e) => setMode(e.target.value)}>
-                      {['cash', 'upi', 'cheque', 'bank_transfer', 'card'].map((m) => <option key={m} value={m}>{MODES[m]}</option>)}
-                    </select>
-                  </Field>
-                  {mode !== 'cash' ? (
-                    <Field label={mode === 'cheque' ? 'Cheque number' : 'Reference number'} htmlFor="ref">
-                      <input id="ref" className="input" style={{ width: 200 }} value={reference} onChange={(e) => setReference(e.target.value)} />
-                    </Field>
-                  ) : null}
-                </div>
-                <div className="row">
-                  <ErrorBox error={error} />
-                  <button className="btn btn-primary" style={{ minHeight: 48, fontSize: '1rem' }} disabled={busy || total <= 0} onClick={collect}>
-                    Collect {inr(total)} and print receipt</button>
+      <div className="collect">
+        <div className="collect-side">
+          <section className="id-card" aria-label="Student">
+            <div className="id-band" aria-hidden />
+            <div className="id-body">
+              <div className="id-photo">
+                {student.photoUrl ? <img src={photoSrc(student.photoUrl)!} alt={`${fullName} photo`} /> : <span aria-hidden>{initials}</span>}
+              </div>
+              <div>
+                <h2>{fullName}</h2>
+                <div className="small muted">
+                  {student.className ? `${classLabel(student.className)} ${student.sectionName ?? ''}` : 'No class this year'}
+                  {student.rollNo ? ` · Roll ${String(student.rollNo).padStart(2, '0')}` : ''}
                 </div>
               </div>
-            ) : <div className="pay-bar"><span className="tag tag-board">All fees for this year are paid</span></div>}
-          </>
-        )}
+              <dl className="id-facts">
+                <div><dt>Admission no.</dt><dd>{student.admissionNo}</dd></div>
+                <div><dt>Parent</dt><dd>{student.family.fatherName ?? student.family.motherName ?? '-'}</dd></div>
+                <div><dt>Phone</dt><dd>{showPhone(student.family.phone)}</dd></div>
+                <div><dt>Siblings</dt><dd>{student.siblings?.length ? student.siblings.map((x) => x.name.split(' ')[0]).join(', ') : 'None'}</dd></div>
+              </dl>
+              <div className="row" style={{ gap: 6 }}>
+                {owed === 0 ? <span className="tag tag-board">All paid</span>
+                  : overdue > 0 ? <span className="tag tag-warn">{inr(overdue)} overdue</span>
+                  : <span className="tag tag-warn">{inr(owed)} to pay</span>}
+                {concessions.length ? <span className="tag">Concession</span> : null}
+              </div>
+              {concessions.length ? (
+                <p className="small muted">{concessions.map((c) =>
+                  `${c.kind === 'percent' ? `${Number(c.value)}%` : inr(c.value)} on ${c.feeHead ?? 'all fees'} (${c.reason})`).join('; ')}</p>
+              ) : null}
+              {can('fees.manage_structure') ? <button className="btn btn-quiet" style={{ alignSelf: 'flex-start', paddingLeft: 0 }} onClick={() => setConcessionOpen(true)}>Concessions</button> : null}
+            </div>
+          </section>
+
+          {open.length ? (
+            <section className="pay-panel" aria-label="Payment">
+              <h2>Payment</h2>
+              <div className="seg seg-wide" role="radiogroup" aria-label="Paid by">
+                {['cash', 'upi', 'cheque', 'bank_transfer', 'card'].map((m) => (
+                  <button key={m} role="radio" aria-checked={mode === m} className={mode === m ? 'on' : undefined} data-v="mode"
+                    onClick={() => setMode(m)}>{MODES[m]}</button>
+                ))}
+              </div>
+              {mode === 'cash' ? (
+                <Field label="Cash received" htmlFor="recv">
+                  <input id="recv" className="input" inputMode="decimal" placeholder={inr(total)} value={received}
+                    onChange={(e) => setReceived(e.target.value.replace(/[^\d.]/g, ''))} />
+                </Field>
+              ) : (
+                <Field label={mode === 'cheque' ? 'Cheque number' : 'Reference number'} htmlFor="ref">
+                  <input id="ref" className="input" value={reference} onChange={(e) => setReference(e.target.value)} />
+                </Field>
+              )}
+              {cashBack !== null && cashBack > 0 ? <div className="change-back"><span>Return to parent</span><strong>{inr(cashBack)}</strong></div> : null}
+              {cashBack !== null && cashBack < 0 ? <div className="error-box small">That is {inr(-cashBack)} less than the total.</div> : null}
+              <div className="pay-total"><span className="small muted">Total</span><span className="total-big">{inr(total)}</span></div>
+              <ErrorBox error={error} />
+              <button className="btn btn-primary btn-big" disabled={busy || total <= 0} onClick={collect}>Save and print receipt</button>
+            </section>
+          ) : null}
+        </div>
+
+        <section className="ledger" aria-label="Dues ledger">
+          <div className="ledger-head">
+            <h2>Dues ledger</h2>
+            <span className="small muted">{inr(owed)} still to pay this year</span>
+          </div>
+          {dues.length === 0 ? (
+            <div className="empty"><h3>No fees set for this student yet</h3>
+              <p>Set the fee structure for their class and create fee lines on the Fee setup tab.</p></div>
+          ) : (
+            <div className="table-wrap">
+              <table className="register ledger-table">
+                <thead><tr><th><span className="sr-only">Pay</span></th><th>Fee head</th><th>Due</th><th className="money">Balance</th><th className="money">Pay now</th><th className="money">Late fine</th></tr></thead>
+                <tbody>{dues.map((d) => {
+                  const p = pick[d.feeDueId];
+                  const late = Number(d.balance) > 0 && d.dueOn < today;
+                  return (
+                    <tr key={d.feeDueId} style={Number(d.balance) === 0 ? { color: 'var(--ink-soft)' } : undefined}>
+                      <td>{p ? <input type="checkbox" className="tick" aria-label={`Pay ${d.feeHead} ${d.instalment}`} checked={p.on}
+                        onChange={(e) => setPick({ ...pick, [d.feeDueId]: { ...p, on: e.target.checked } })} /> : <span className="tag tag-board">Paid</span>}</td>
+                      <td><strong>{d.feeHead}</strong><div className="small muted">{d.instalment}</div></td>
+                      <td className="small nowrap" style={late ? { color: 'var(--marigold)', fontWeight: 700 } : undefined}>{niceDate(d.dueOn)}</td>
+                      <td className="money"><strong>{inr(d.balance)}</strong>
+                        {Number(d.concession) || Number(d.paid) ? <div className="small muted">of {inr(d.amount)}{Number(d.concession) ? `, −${inr(d.concession)} concession` : ''}{Number(d.paid) ? `, ${inr(d.paid)} paid` : ''}</div> : null}</td>
+                      <td className="money">{p ? <input className="input money-in" inputMode="decimal" aria-label="Amount to pay" disabled={!p.on}
+                        value={p.amount} onChange={(e) => setPick({ ...pick, [d.feeDueId]: { ...p, amount: e.target.value.replace(/[^\d.]/g, '') } })} /> : null}</td>
+                      <td className="money">{p ? <input className="input money-in" inputMode="decimal" aria-label="Late fine" disabled={!p.on}
+                        value={p.fine} onChange={(e) => setPick({ ...pick, [d.feeDueId]: { ...p, fine: e.target.value.replace(/[^\d.]/g, '') } })} /> : null}</td>
+                    </tr>
+                  );
+                })}</tbody>
+              </table>
+            </div>
+          )}
+          {dues.length && !open.length ? <div className="ledger-foot"><span className="tag tag-board">All fees for this year are paid</span></div>
+            : dues.length ? <div className="ledger-foot"><span className="small muted">Selected</span><span className="total-big">{inr(total)}</span></div> : null}
+        </section>
       </div>
 
       <div>

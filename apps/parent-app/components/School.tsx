@@ -1,10 +1,10 @@
-// The school's identity at the top of the parent app: logo, name, and the
-// school's colour. With more than one child, tap a name to switch.
-import { useState } from 'react';
+// The school's identity at the top of the parent app: logo, name and date.
+// With more than one child, tap a name to switch.
+import { useState, type ReactNode } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { schoolLogoUrl } from '@/lib/api';
 import { useParent, type Child } from '@/lib/auth';
-import { C, classLabel } from '@/lib/theme';
+import { C, SH, classLabel, longDate } from '@/lib/theme';
 import { T } from './ui';
 
 export function SchoolLogo({ child, size = 44 }: { child: Child; size?: number }) {
@@ -23,43 +23,42 @@ export function SchoolLogo({ child, size = 44 }: { child: Child; size?: number }
   );
 }
 
-export function SchoolBand() {
+export function SchoolBand({ right }: { right?: ReactNode }) {
   const { state, child, accent, selectChild } = useParent();
   if (state.status !== 'in' || !child) return null;
   return (
-    <View style={[s.band, { backgroundColor: accent }]}>
+    <View style={s.band}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <SchoolLogo child={child} />
+        <View style={[s.logoWrap, SH.lift]}><SchoolLogo child={child} size={44} /></View>
         <View style={{ flex: 1 }}>
-          <T display size={18} style={{ color: '#fff' }} numberOfLines={2}>{child.schoolName}</T>
+          <T bold size={15} numberOfLines={2}>{child.schoolName}</T>
+          <T soft size={13}>{longDate(new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }))}</T>
         </View>
+        {right}
       </View>
       {state.children.length > 1 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 14 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20, marginTop: 4 }} contentContainerStyle={{ gap: 10, paddingVertical: 14, paddingHorizontal: 22 }}>
           {state.children.map((c) => {
             const on = c.id === child.id;
             return (
               <Pressable key={c.id} accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={() => selectChild(c.id)}
-                style={[s.kid, on ? { backgroundColor: '#fff' } : { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
-                <T bold size={15} style={{ color: on ? accent : '#fff' }}>{c.first_name}</T>
-                <T size={12} style={{ color: on ? C.inkSoft : 'rgba(255,255,255,0.85)' }}>
+                style={[s.kid, on ? { backgroundColor: accent, ...SH.glow(accent) } : { backgroundColor: '#F6FAFC', ...SH.raised }]}>
+                <T bold size={15} style={{ color: on ? '#fff' : C.ink }}>{c.first_name}</T>
+                <T size={12} style={{ color: on ? 'rgba(255,255,255,0.9)' : C.inkSoft }}>
                   {c.class_name ? `${classLabel(c.class_name)} ${c.section_name}` : c.schoolShortName ?? ''}
                 </T>
               </Pressable>
             );
           })}
         </ScrollView>
-      ) : (
-        <T size={14} style={{ color: 'rgba(255,255,255,0.9)', marginTop: 10 }}>
-          {child.first_name} {child.last_name ?? ''}{child.class_name ? `, ${classLabel(child.class_name)} ${child.section_name}` : ''}
-        </T>
-      )}
+      ) : null}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  band: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16 },
+  band: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  logoWrap: { borderRadius: 16, backgroundColor: '#fff', padding: 0 },
   logo: { backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  kid: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, minWidth: 92 },
+  kid: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 16, minWidth: 96 },
 });

@@ -33,7 +33,7 @@ export default function StudentsPage() {
     <>
       <div className="page-head">
         <div><h1>Students</h1><p>{structure ? `Academic year ${structure.year.name}.` : ''} Search by name, admission number or family phone.</p></div>
-        {can('students.manage') ? <Link className="btn btn-primary" href="/students/new">Add student</Link> : null}
+        {can('students.manage') ? <div className="row"><Link className="btn btn-plain" href="/students/register">Registers</Link><Link className="btn btn-primary" href="/students/new">Add student</Link></div> : null}
       </div>
 
       <div className="row" style={{ marginBottom: 14 }}>

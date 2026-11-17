@@ -9,7 +9,7 @@ import { C } from '@/lib/theme';
 import { Loading, T } from '@/components/ui';
 
 interface Msg { id: string; title: string; body: string; data: { kind: string }; createdAt: string; readAt: string | null; schoolName: string }
-const KIND: Record<string, string> = { notice: 'Notice', homework: 'Homework', absent: 'Attendance' };
+const KIND: Record<string, string> = { notice: 'Notice', homework: 'Homework', absent: 'Attendance', marks: 'Marks', class_test: 'Class test', report_card: 'Report card', marksheet: 'Results' };
 const when = (t: string) => new Date(t).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 
 export default function Messages() {

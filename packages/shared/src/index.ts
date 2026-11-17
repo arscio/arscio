@@ -38,6 +38,10 @@ export const PERMISSIONS = [
   'fees.manage_structure',
   'fees.view_reports',
   'notices.publish',
+  'timetable.manage',
+  'leave.apply',
+  'leave.approve',
+  'data.import_export',
   'parent.own_children',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -56,13 +60,19 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     'students.view', 'fees.collect', 'fees.cancel_receipt',
     'fees.manage_structure', 'fees.view_reports',
   ],
-  teacher: ['attendance.take', 'homework.post', 'marks.enter'],
+  teacher: ['attendance.take', 'homework.post', 'marks.enter', 'leave.apply'],
   parent: ['parent.own_children'],
 };
 
+/** Permissions the owner or principal can give to one person, on top of their roles. */
+export const GRANTABLE: readonly Permission[] = ['data.import_export'];
+export const PERMISSION_LABELS: Partial<Record<Permission, string>> = {
+  'data.import_export': 'Excel import and export',
+};
+
 /** Everything a person can do, given all the roles they hold. */
-export function permissionsFor(roles: readonly Role[]): Set<Permission> {
-  const out = new Set<Permission>();
+export function permissionsFor(roles: readonly Role[], extra: readonly Permission[] = []): Set<Permission> {
+  const out = new Set<Permission>(extra.filter((p) => GRANTABLE.includes(p)));
   for (const r of roles) for (const p of ROLE_PERMISSIONS[r]) out.add(p);
   return out;
 }

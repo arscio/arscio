@@ -17,8 +17,9 @@ export class Tokens {
     this.key = new TextEncoder().encode(secret);
   }
 
-  async access(accountId: string): Promise<string> {
-    return new SignJWT({ typ: 'access' })
+  /** mcp = "must change password": only the change-password screen works until it's done. */
+  async access(accountId: string, mustChange = false): Promise<string> {
+    return new SignJWT({ typ: 'access', ...(mustChange ? { mcp: true } : {}) })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(accountId)
       .setIssuedAt()

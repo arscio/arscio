@@ -1,7 +1,7 @@
 -- =====================================================================
 -- Migration 002: each school's own identity
 -- =====================================================================
--- Staff screens (admin website, teacher app) always use the AIEdu brand.
+-- Staff screens (admin website, teacher app) always use the Arscio brand.
 -- The school's own logo and colour appear on what families see:
 -- the school's public website, the parent (and later student) app,
 -- receipts and report cards.
@@ -21,4 +21,4 @@ CREATE TABLE school_logos (
 ALTER TABLE school_logos ENABLE ROW LEVEL SECURITY;
 CREATE POLICY school_isolation ON school_logos
   USING (school_id = app_school_id()) WITH CHECK (school_id = app_school_id());
-GRANT SELECT, INSERT, UPDATE, DELETE ON school_logos TO aiedu_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON school_logos TO arscio_app;

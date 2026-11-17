@@ -15,12 +15,12 @@ export async function migrate(ownerUrl: string, appPassword: string, log = conso
   await client.connect();
   try {
     // The locked-down user the running app logs in as.
-    const role = await client.query("SELECT 1 FROM pg_roles WHERE rolname = 'aiedu_app'");
+    const role = await client.query("SELECT 1 FROM pg_roles WHERE rolname = 'arscio_app'");
     if (role.rowCount === 0) {
       await client.query(
-        `CREATE ROLE aiedu_app LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD ${client.escapeLiteral(appPassword)}`,
+        `CREATE ROLE arscio_app LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD ${client.escapeLiteral(appPassword)}`,
       );
-      log('Created database user aiedu_app');
+      log('Created database user arscio_app');
     }
     await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`);

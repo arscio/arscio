@@ -4,9 +4,9 @@ import pg from 'pg';
 import { migrate } from '../src/migrate.js';
 
 export const TEST_OWNER_URL =
-  process.env.TEST_DATABASE_OWNER_URL ?? 'postgres://aiedu_owner:dev_only_password@localhost:5432/aiedu_test';
+  process.env.TEST_DATABASE_OWNER_URL ?? 'postgres://arscio_owner:dev_only_password@localhost:5432/arscio_test';
 export const TEST_APP_URL =
-  process.env.TEST_DATABASE_URL ?? 'postgres://aiedu_app:dev_app_password@localhost:5432/aiedu_test';
+  process.env.TEST_DATABASE_URL ?? 'postgres://arscio_app:dev_app_password@localhost:5432/arscio_test';
 
 export default async function setup() {
   const c = new pg.Client({ connectionString: TEST_OWNER_URL });

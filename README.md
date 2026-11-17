@@ -1,4 +1,4 @@
-# AIEdu
+# Arscio
 
 A school management platform: student records, attendance, fees and receipts,
 notices, report cards, a principal dashboard, and two phone apps (Teacher and Parent).
@@ -15,10 +15,10 @@ Target: ready February 2027 → staff test it next to paper in March → live in
 | `db/migrations/` | **The database design.** Every table, every rule. | ✅ Built and tested |
 | `apps/api/` | **The server** – the "brain" every app talks to. Handles logins, checks permissions, saves data. | ✅ Foundation built and tested |
 | `packages/shared/` | Rules shared by everything (role names, who can do what, rupees in words). | ✅ Built |
-| `packages/brand/` | The AIEdu logo, app icons, favicons and social images (from the design export). | ✅ |
+| `packages/brand/` | The Arscio logo, app icons, favicons and social images (from the design export). | ✅ |
 | `apps/admin-web/` | **The admin website** for the owner, principal, office and accountant. | ✅ Login + school setup screens built and tested |
 | `apps/teacher-app/` | **Teacher app** (Play Store + App Store): attendance, homework, marks. | ✅ Login, attendance, homework built and tested |
-| `apps/parent-app/` | **AIEdu Parent app** (Play Store + App Store): all children, attendance, fees, homework, messages; shows each child's school identity. | ✅ Built and tested |
+| `apps/parent-app/` | **Arscio Parent app** (Play Store + App Store): all children, attendance, fees, homework, messages; shows each child's school identity. | ✅ Built and tested |
 | `docs/` | Decisions and the build plan. | 📄 |
 
 ## The four promises the foundation already keeps (and proves with tests)
@@ -57,8 +57,9 @@ pnpm install                       # download the building blocks
 pnpm db:up                         # start a database on your Mac
 cp .env.example apps/api/.env      # create your settings file (then edit JWT_SECRET)
 pnpm db:migrate                    # build the tables
-pnpm --filter @aiedu/api create-school -- --code DEMO --name "Demo Public School" \
+pnpm --filter @arscio/api create-school -- --code DEMO --name "Demo Public School" \
      --owner-name "Zahid" --owner-phone 9876543210
+pnpm --filter @arscio/api demo     # OR: fill an empty database with two demo schools to try things
 pnpm dev:api                       # start the server at http://localhost:4000
 cp apps/admin-web/.env.example apps/admin-web/.env.local
 pnpm dev:web                       # in a second window: the website at http://localhost:3000
@@ -96,14 +97,14 @@ Exams and report cards show "coming in January" for now.
 
 | Who sees it | Brand |
 |---|---|
-| Admin website, teacher app (owner, principal, office, accountant, teachers) | **AIEdu** |
+| Admin website, teacher app (owner, principal, office, accountant, teachers) | **Arscio** |
 | School's public website, parent app (and later student app) | **The school's** name, logo and colour inside the app (the parent app switches look per child's school) |
-| Receipts and report cards | **The school's** logo, name, colour; small "Powered by AIEdu" |
-| App store icons | AIEdu Parent (gold) and AIEdu Teacher (emerald). A school can later get its own build: see `apps/parent-app/brands/` |
+| Receipts and report cards | **The school's** logo, name, colour; small "Powered by Arscio" |
+| App store icons | Arscio Parent (gold) and Arscio Teacher (emerald). A school can later get its own build: see `apps/parent-app/brands/` |
 
 The website keeps logins in secure cookies that page code can't read, and every screen only shows what that person's roles allow.
 
 During development, login codes (OTPs) are printed in the server window instead of being sent by SMS.
 
-To run the safety checks you also need an empty test database named `aiedu_test`
+To run the safety checks you also need an empty test database named `arscio_test`
 (see `apps/api/test/global-setup.ts`), then `pnpm test`.

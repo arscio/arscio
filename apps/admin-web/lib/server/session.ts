@@ -1,15 +1,15 @@
 // SERVER-SIDE ONLY. The website's own small server keeps the login tickets in
 // secure cookies that the browser's JavaScript can never read. Every request
 // from the screens goes through here, and we attach the ticket on the way to
-// the aiedu server. This protects logins even if a page were ever tampered with.
+// the arscio server. This protects logins even if a page were ever tampered with.
 import 'server-only';
 import { cookies } from 'next/headers';
 
 export const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 
-const ACCESS = 'aiedu_at';
-const REFRESH = 'aiedu_rt';
-export const SCHOOL = 'aiedu_school';
+const ACCESS = 'arscio_at';
+const REFRESH = 'arscio_rt';
+export const SCHOOL = 'arscio_school';
 
 const secure = process.env.NODE_ENV === 'production';
 const base = { httpOnly: true, secure, sameSite: 'lax' as const, path: '/' };
@@ -52,7 +52,7 @@ async function refresh(): Promise<string | null> {
   return t.accessToken;
 }
 
-/** Call the aiedu server as the logged-in person, renewing the ticket if needed. */
+/** Call the arscio server as the logged-in person, renewing the ticket if needed. */
 export async function callApi(path: string, init: { method: string; body?: string; schoolId?: string | null }) {
   const jar = await cookies();
   let token = jar.get(ACCESS)?.value ?? (await refresh());

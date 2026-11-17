@@ -1,5 +1,5 @@
 -- =====================================================================
--- aiedu - Migration 001: the foundation
+-- arscio - Migration 001: the foundation
 -- =====================================================================
 -- PLAIN-LANGUAGE SUMMARY
 --   * Every school's data lives in the same database, but EVERY row is
@@ -753,16 +753,16 @@ CREATE POLICY audit_insert ON audit_log FOR INSERT WITH CHECK (true);
 CREATE POLICY audit_read ON audit_log FOR SELECT USING (school_id = app_school_id());
 
 -- ---------- What the running app is allowed to do ---------------------
--- (The "aiedu_app" database user is created by the migration runner.)
+-- (The "arscio_app" database user is created by the migration runner.)
 
-GRANT USAGE ON SCHEMA public TO aiedu_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO aiedu_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO aiedu_app;
+GRANT USAGE ON SCHEMA public TO arscio_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO arscio_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO arscio_app;
 
 -- Belt and braces: the app user simply has no permission to delete money records
 -- or touch the audit log.
-REVOKE DELETE ON receipts, receipt_lines, audit_log FROM aiedu_app;
-REVOKE UPDATE ON receipt_lines, audit_log FROM aiedu_app;
-REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public FROM aiedu_app;
+REVOKE DELETE ON receipts, receipt_lines, audit_log FROM arscio_app;
+REVOKE UPDATE ON receipt_lines, audit_log FROM arscio_app;
+REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public FROM arscio_app;
 -- Only the platform (not a school) creates schools.
-REVOKE INSERT, DELETE ON schools FROM aiedu_app;
+REVOKE INSERT, DELETE ON schools FROM arscio_app;

@@ -95,7 +95,7 @@ describe('Collecting fees', () => {
     expect(r.statusCode).toBe(200);
     receiptId = r.json().id;
     const full = (await acc.get(`/fees/receipts/${receiptId}`)).json();
-    expect(full).toMatchObject({ receiptNo: 'RC/2027-28/00001', total: '5100.00', mode: 'cash', collectedBy: 'Anil Accounts', status: 'active' });
+    expect(full).toMatchObject({ receiptNo: expect.stringMatching(/^RC\/2027-28\/\d{2}\/0001$/), total: '5100.00', mode: 'cash', collectedBy: 'Anil Accounts', status: 'active' });
     expect(full.school.name).toBe('Green Valley Public School');
     expect(full.student).toMatchObject({ name: 'Arif', className: '5', sectionName: 'A' });
     expect(full.lines).toHaveLength(2);
@@ -114,7 +114,7 @@ describe('Collecting fees', () => {
     const book = (await acc.get('/fees/receipts')).json();
     expect(book.receipts).toHaveLength(3); // Arif's, Tara's UPI, and the cancelled one
     expect(book).toMatchObject({ total: '6100.00', cancelled: 1, byMode: { cash: '5100.00', upi: '1000.00' } });
-    expect(upi.receipt_no).toBe('RC/2027-28/00002');
+    expect(upi.receipt_no).toMatch(/^RC\/2027-28\/\d{2}\/0002$/);
   });
 });
 

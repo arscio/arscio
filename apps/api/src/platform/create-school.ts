@@ -22,6 +22,22 @@ export const DEFAULT_CLASSES: { name: string; style: 'grades_only' | 'marks_and_
   ...Array.from({ length: 10 }, (_, i) => ({ name: String(i + 1), style: 'marks_and_grades' as const })),
 ];
 
+export const DEFAULT_DOCUMENT_TYPES: { name: string; category: string; required?: 'all' | 'class2up'; asksForClass?: boolean; system?: boolean }[] = [
+  { name: 'Birth certificate', category: 'admission', required: 'all' },
+  { name: "Parent's ID proof", category: 'admission', required: 'all' },
+  { name: 'Previous school TC', category: 'admission', required: 'class2up' },
+  { name: 'Previous school marksheet', category: 'admission', required: 'class2up', asksForClass: true },
+  { name: 'Aadhaar card', category: 'admission' },
+  { name: 'Caste / category certificate', category: 'admission' },
+  { name: 'Medical / disability certificate', category: 'admission' },
+  { name: 'Address proof', category: 'admission' },
+  { name: 'Report card', category: 'report_card', asksForClass: true, system: true },
+  { name: 'Transfer certificate (issued)', category: 'certificate', system: true },
+  { name: 'Bonafide certificate (issued)', category: 'certificate', system: true },
+  { name: 'Character certificate (issued)', category: 'certificate', system: true },
+  { name: 'Other document', category: 'other' },
+];
+
 // CBSE 8-point scale (adjustable later by the school admin)
 export const CBSE_SCALE = [
   { min: 91, max: 100, grade: 'A1', point: 10 },
@@ -61,6 +77,16 @@ export async function createSchool(owner: pg.ClientBase, s: NewSchool) {
         'INSERT INTO classes (school_id, name, sort_order, assessment_style) VALUES ($1, $2, $3, $4)',
         [school.id, c.name, i, c.style],
       );
+    }
+    // Default document checklist (the principal can change it).
+    const allClasses = (await owner.query<{ id: string; name: string }>('SELECT id, name FROM classes WHERE school_id = $1', [school.id])).rows;
+    const class2up = allClasses.filter((c) => /^\d+$/.test(c.name) && Number(c.name) >= 2).map((c) => c.id);
+    for (const [i, d] of DEFAULT_DOCUMENT_TYPES.entries()) {
+      await owner.query(
+        `INSERT INTO document_types (school_id, name, category, required_classes, asks_for_class, system, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [school.id, d.name, d.category, d.required === 'all' ? allClasses.map((c) => c.id) : d.required === 'class2up' ? class2up : [],
+         d.asksForClass ?? false, d.system ?? false, i + 1]);
     }
     await owner.query('INSERT INTO grading_scales (school_id, name, bands) VALUES ($1, $2, $3), ($1, $4, $5)', [
       school.id, 'CBSE 8-point', JSON.stringify(CBSE_SCALE), 'Pre-primary', JSON.stringify(PRE_PRIMARY_SCALE),

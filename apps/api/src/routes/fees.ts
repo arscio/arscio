@@ -298,7 +298,7 @@ export function registerFeeRoutes(app: FastifyInstance, db: Db, requireSchool: p
                   'admissionNo', st.admission_no, 'familyAccountId', f.account_id,
                   'className', c.name, 'sectionName', sec.name, 'rollNo', e.roll_no,
                   'fatherName', f.father_name, 'motherName', f.mother_name, 'phone', f.phone) AS student,
-                json_build_object('id', s.id, 'name', s.name, 'address', s.address, 'phone', s.phone, 'email', s.email,
+                json_build_object('id', s.id, 'name', s.name, 'shortName', s.short_name, 'address', s.address, 'phone', s.phone, 'email', s.email,
                   'logoUrl', s.logo_url, 'brandColor', s.brand_color, 'affiliationNo', s.affiliation_no, 'board', s.board) AS school,
                 (SELECT json_agg(json_build_object('description', l.description, 'amount', l.amount, 'fine', l.fine) ORDER BY l.description)
                    FROM receipt_lines l WHERE l.receipt_id = r.id) AS lines

@@ -7,6 +7,8 @@ import { badRequest, forbidden, notFound } from '../errors.js';
 import { schoolTx } from '../context.js';
 import { studentDues } from '../fees/service.js';
 import { todayIST } from './attendance.js';
+import { buildReport } from '../exams/report.js';
+import { editableUntil } from '../exams/workflow.js';
 
 const uuid = z.string().uuid();
 
@@ -40,6 +42,16 @@ export function registerParentRoutes(app: FastifyInstance, db: Db, requireSchool
     if (!req.school?.permissions.has('parent.own_children')) throw forbidden();
   };
 
+  /** The child's report card: only terms the principal has published. */
+  app.get('/parent/children/:id/report', pre, async (req) => {
+    mustParent(req);
+    const { id } = z.object({ id: uuid }).parse(req.params);
+    return schoolTx(db, req, async (tx) => {
+      await ownChild(tx, req, id);
+      return buildReport(tx, id, { publishedOnly: true });
+    });
+  });
+
   /** Home screen for one child: today, this month, fees, homework, school identity. */
   app.get('/parent/children/:id/summary', pre, async (req) => {
     mustParent(req);
@@ -70,8 +82,12 @@ export function registerParentRoutes(app: FastifyInstance, db: Db, requireSchool
                 phone, address, online_payments_enabled AS "onlinePayments"
            FROM schools WHERE id = $1`, [req.school!.schoolId])).rows[0];
 
+      const reportTerms = (await tx.query<{ name: string }>(
+        `SELECT name FROM terms WHERE academic_year_id = $1 AND published_at IS NOT NULL ORDER BY sort_order, name`,
+        [child.yearId])).rows.map((r) => r.name);
+
       return {
-        child, school,
+        child, school, reportTerms,
         attendance: { today: todayMark, month: { present, absent, leave: days.filter((d) => d.status === 'leave').length, days: days.length } },
         fees: { due: sum(open), overdue: sum(overdue), nextDueOn: next, hasFees: dues.length > 0 },
         homework,
@@ -104,11 +120,65 @@ export function registerParentRoutes(app: FastifyInstance, db: Db, requireSchool
       return {
         homework: (await tx.query(
           `SELECT h.id, h.title, h.details, h.due_on AS "dueOn", h.created_at AS "createdAt",
-                  sub.name AS "subjectName", a.name AS "givenBy"
+                  sub.name AS "subjectName", a.name AS "givenBy",
+                  CASE WHEN h.report_sent_at IS NOT NULL THEN hs.status END AS "submission"
              FROM homework h LEFT JOIN subjects sub ON sub.id = h.subject_id JOIN accounts a ON a.id = h.created_by
+             LEFT JOIN homework_submissions hs ON hs.homework_id = h.id AND hs.student_id = $2
             WHERE h.section_id = $1 AND h.created_at > now() - interval '30 days'
-            ORDER BY h.created_at DESC`, [child.sectionId])).rows,
+            ORDER BY h.created_at DESC`, [child.sectionId, id])).rows,
       };
+    });
+  });
+
+  /**
+   * Marks section: every exam subject the teacher has submitted (provisional for 7 days,
+   * then final), plus class tests (shown, but not counted in the result).
+   */
+  app.get('/parent/children/:id/marks', pre, async (req) => {
+    mustParent(req);
+    const { id } = z.object({ id: uuid }).parse(req.params);
+    return schoolTx(db, req, async (tx) => {
+      const child = await ownChild(tx, req, id);
+      if (!child.sectionId) return { exams: [], classTests: [] };
+      const rows = (await tx.query<{
+        examId: string; examName: string; termName: string; startsOn: string | null; subjectId: string; subjectName: string;
+        marks: string | null; max: string | null; internal: string | null; internalMax: string | null; grade: string | null;
+        absent: boolean; submittedAt: Date; reopenedUntil: Date | null;
+      }>(
+        `SELECT x.id AS "examId", x.name AS "examName", t.name AS "termName", x.starts_on::text AS "startsOn",
+                sub.id AS "subjectId", sub.name AS "subjectName",
+                mk.marks_obtained AS marks, mk.max_marks AS max, mk.internal_marks AS internal, mk.internal_max AS "internalMax",
+                mk.grade, mk.is_absent AS absent, ms.first_submitted_at AS "submittedAt", ms.reopened_until AS "reopenedUntil"
+           FROM marks_submissions ms
+           JOIN exams x ON x.id = ms.exam_id
+           JOIN terms t ON t.id = x.term_id AND t.academic_year_id = $3
+           JOIN subjects sub ON sub.id = ms.subject_id
+           JOIN marks mk ON mk.exam_id = ms.exam_id AND mk.subject_id = ms.subject_id AND mk.student_id = $1
+           LEFT JOIN class_subjects cs ON cs.subject_id = sub.id
+                AND cs.class_id = (SELECT class_id FROM sections WHERE id = $2)
+          WHERE ms.section_id = $2
+          ORDER BY t.sort_order, x.sort_order, x.starts_on NULLS LAST, cs.sort_order NULLS LAST, sub.name`,
+        [id, child.sectionId, child.yearId])).rows;
+      const exams: { id: string; name: string; termName: string; subjects: unknown[] }[] = [];
+      for (const r of rows) {
+        let e = exams.find((x) => x.id === r.examId);
+        if (!e) { e = { id: r.examId, name: r.examName, termName: r.termName, subjects: [] }; exams.push(e); }
+        const until = editableUntil({ first_submitted_at: r.submittedAt, reopened_until: r.reopenedUntil })!;
+        const n = (v: string | null) => (v == null ? null : Number(v));
+        e.subjects.push({
+          subjectId: r.subjectId, subject: r.subjectName, marks: n(r.marks), max: n(r.max), internal: n(r.internal),
+          internalMax: n(r.internalMax), grade: r.grade, absent: r.absent,
+          provisional: until > new Date(), finalFrom: until,
+        });
+      }
+      const classTests = (await tx.query(
+        `SELECT t.id, t.title, t.held_on::text AS "heldOn", t.max_marks::float AS max, sub.name AS subject,
+                m.marks::float AS marks, coalesce(m.is_absent, false) AS absent
+           FROM class_tests t JOIN subjects sub ON sub.id = t.subject_id
+           JOIN class_test_marks m ON m.test_id = t.id AND m.student_id = $1
+          WHERE t.section_id = $2 AND t.published_at IS NOT NULL
+          ORDER BY t.held_on DESC LIMIT 60`, [id, child.sectionId])).rows;
+      return { exams, classTests };
     });
   });
 

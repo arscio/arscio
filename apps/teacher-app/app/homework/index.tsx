@@ -1,4 +1,4 @@
-// Homework I gave in the last two weeks.
+// Homework I gave in the last two weeks. From the due day: tick who handed it in.
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, View } from 'react-native';
@@ -8,8 +8,10 @@ import { Button, Card, ErrorText, Loading, T } from '@/components/ui';
 
 export interface Homework {
   id: string; className: string; sectionName: string; subjectName: string | null;
-  title: string; details: string | null; dueOn: string | null; createdAt: string;
+  title: string; details: string | null; dueOn: string | null; createdAt: string; reportSentAt?: string | null;
 }
+
+const todayIST = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
 export const shortDate = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -58,6 +60,11 @@ export default function HomeworkList() {
             <Button kind="quiet" label={confirming === item.id ? 'Tap again to remove' : 'Remove'}
               onPress={() => (confirming === item.id ? remove(item.id) : setConfirming(item.id))} />
           </View>
+          {!item.dueOn || item.dueOn.slice(0, 10) <= todayIST() ? (
+            <Button kind={item.reportSentAt ? 'plain' : 'primary'}
+              label={item.reportSentAt ? 'Sent to parents · change ticks' : 'Who handed it in?'}
+              onPress={() => router.push({ pathname: '/homework/[id]', params: { id: item.id } })} />
+          ) : null}
         </Card>
       )}
     />

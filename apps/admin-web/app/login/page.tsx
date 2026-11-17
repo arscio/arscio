@@ -3,8 +3,10 @@
 //   phone -> (first time) code by SMS -> set a password
 //   phone -> (after that) password
 //   "Forgot password" -> code by SMS -> new password
+// Password mode (no SMS): email or mobile number + the password the principal gave,
+// then the person must choose their own password.
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError, auth } from '@/lib/api';
 import { ErrorBox, Field, PhoneInput } from '@/components/ui';
 import { Logo } from '@/components/Logo';
@@ -12,6 +14,66 @@ import { Logo } from '@/components/Logo';
 type Step = 'phone' | 'password' | 'otp' | 'new-password';
 
 export default function LoginPage() {
+  const [mode, setMode] = useState<'otp' | 'password' | null>(null);
+  useEffect(() => { auth.mode().then((m) => setMode(m.mode)).catch(() => setMode('otp')); }, []);
+  if (!mode) return <div className="login-wrap"><LoginArt /><section className="login-form" /></div>;
+  return mode === 'password' ? <PasswordLogin /> : <OtpLogin />;
+}
+
+function LoginArt() {
+  return (
+    <section className="login-art">
+      <Logo size={34} />
+      <svg className="big-mark" width="460" height="460" viewBox="0 0 100 100" aria-hidden>
+          <g fill="#0B7FA6" stroke="#0B7FA6" strokeWidth="7" strokeLinejoin="round"><path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" /></g>
+          <path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F2A33A" />
+      </svg>
+      <div>
+        <h1>The school office, in one place.</h1>
+        <p>Students, attendance, fees, notices and report cards, for owners, principals and office staff.</p>
+      </div>
+    </section>
+  );
+}
+
+function PasswordLogin() {
+  const router = useRouter();
+  const [id, setId] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setError(null);
+    auth.step<{ mustChangePassword: boolean }>('login', { identifier: id, password })
+      .then((r) => router.replace(r.mustChangePassword ? '/change-password' : '/choose-school'))
+      .catch((err) => setError(err instanceof ApiError ? err.message : 'Could not connect. Check the internet and try again.'))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <div className="login-wrap">
+      <LoginArt />
+      <section className="login-form">
+        <form className="stack" style={{ maxWidth: 380 }} onSubmit={submit}>
+          <div><h2>Log in</h2><p className="muted">Use the email or mobile number the school has for you.</p></div>
+          <Field label="Email or mobile number" htmlFor="id">
+            <input id="id" className="input" autoComplete="username" autoFocus required
+              value={id} onChange={(e) => setId(e.target.value)} />
+          </Field>
+          <Field label="Password" htmlFor="pw">
+            <input id="pw" className="input" type="password" autoComplete="current-password" required
+              value={password} onChange={(e) => setPassword(e.target.value)} />
+          </Field>
+          <ErrorBox error={error} />
+          <button className="btn btn-primary" disabled={busy || !id.trim() || !password}>Log in</button>
+          <p className="muted small">Forgot your password? Ask the principal to give you a new one.</p>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function OtpLogin() {
   const router = useRouter();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
@@ -74,17 +136,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrap">
-      <section className="login-art">
-        <Logo size={34} onDark />
-        <svg className="big-mark" width="460" height="460" viewBox="0 0 100 100" aria-hidden>
-          <path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" fill="#12493B" stroke="#12493B" strokeWidth="7" strokeLinejoin="round" />
-          <path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F5B700" />
-        </svg>
-        <div>
-          <h1>The school office, in one place.</h1>
-          <p>Students, attendance, fees, notices and report cards, for owners, principals and office staff.</p>
-        </div>
-      </section>
+<LoginArt />
 
       <section className="login-form">
         <div className="stack" style={{ maxWidth: 380 }}>

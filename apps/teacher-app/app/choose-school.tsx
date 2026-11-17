@@ -12,7 +12,7 @@ export default function ChooseSchool() {
       {schools.length === 0 ? (
         <Card style={{ gap: 10 }}>
           <T bold size={18}>This app is for teachers</T>
-          <T soft>Your number is not on any school&apos;s staff list. Parents use the AIEdu parent app. If you are a teacher, ask the school office to add you.</T>
+          <T soft>Your number is not on any school&apos;s staff list. Parents use the Arscio parent app. If you are a teacher, ask the school office to add you.</T>
           <Button kind="plain" label="Log out" onPress={logout} />
         </Card>
       ) : (

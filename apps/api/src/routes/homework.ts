@@ -23,7 +23,8 @@ const body = z.object({
 const SELECT = `
   SELECT h.id, h.section_id AS "sectionId", c.name AS "className", s.name AS "sectionName",
          h.subject_id AS "subjectId", sub.name AS "subjectName", h.title, h.details,
-         h.due_on AS "dueOn", h.created_at AS "createdAt", h.created_by AS "createdBy", a.name AS "givenBy"
+         h.due_on AS "dueOn", h.created_at AS "createdAt", h.created_by AS "createdBy", a.name AS "givenBy",
+         h.report_sent_at AS "reportSentAt"
     FROM homework h
     JOIN sections s ON s.id = h.section_id
     JOIN classes c ON c.id = s.class_id

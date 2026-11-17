@@ -1,4 +1,4 @@
-// How the app talks to the AIEdu server.
+// How the app talks to the Arscio server.
 //
 // Login tickets: the long-lived "stay logged in" ticket is kept in the phone's
 // secure storage (Keychain on iPhone, Keystore on Android). The short-lived
@@ -8,8 +8,8 @@ import { Platform } from 'react-native';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
 
-const REFRESH_KEY = 'aiedu_parent_refresh';
-const SCHOOL_KEY = 'aiedu_parent_child';
+const REFRESH_KEY = 'arscio_parent_refresh';
+const SCHOOL_KEY = 'arscio_parent_child';
 
 // On the web (used only for trying the app during development) there is no
 // secure storage, so the browser's storage is used instead.
@@ -120,3 +120,18 @@ export async function logout() {
 /** A school's logo (public). */
 export const schoolLogoUrl = (schoolId: string, version: string | null) =>
   `${API_URL}/schools/${schoolId}/logo${version ? `?${version.split('?')[1] ?? ''}` : ''}`;
+
+/** "password" (school gives passwords, no SMS) or "otp" (SMS code the first time). Asked from the server. */
+export async function loginMode(): Promise<'otp' | 'password'> {
+  try {
+    const { res, data } = await raw('GET', '/auth/mode');
+    if (res.ok && (data.mode === 'otp' || data.mode === 'password')) return data.mode;
+  } catch { /* offline: fall through */ }
+  return process.env.EXPO_PUBLIC_LOGIN_MODE === 'password' ? 'password' : 'otp';
+}
+
+/** Change password (old + new). Gives a fresh login; other phones are logged out. */
+export async function changePassword(oldPassword: string, newPassword: string, device: string) {
+  const data = await call<{ accessToken: string; refreshToken: string }>('POST', '/auth/change-password', { oldPassword, newPassword, device });
+  await session.save(data);
+}

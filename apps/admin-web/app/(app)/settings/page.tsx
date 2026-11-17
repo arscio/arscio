@@ -1,6 +1,7 @@
 'use client';
-import { useState, type FormEvent } from 'react';
-import { ApiError, api } from '@/lib/api';
+import { useEffect, useState, type FormEvent } from 'react';
+import { classLabel, type Structure } from '@/lib/types';
+import { ApiError, api, fileUrl, readUpload } from '@/lib/api';
 import { useSchool } from '@/components/AppShell';
 import { ErrorBox, Field, useToast } from '@/components/ui';
 
@@ -16,6 +17,9 @@ export default function SettingsPage() {
         <Profile key={`p-${s.name}${s.address}${s.phone}${s.email}`} onSaved={async () => { await reload(); toast.show('School details saved'); }} />
         <Identity key={`i-${s.logo_url}${s.brand_color}${s.short_name}${s.affiliation_no}`} onSaved={async (m) => { await reload(); toast.show(m); }} />
         <Attendance key={`a-${s.attendance_mode}${s.periods_per_day}`} onSaved={async () => { await reload(); toast.show('Attendance setting saved'); }} />
+        <AdmissionNumbers onSaved={() => toast.show('Admission number format saved')} />
+        <DocumentChecklist onSaved={(m) => toast.show(m)} />
+        <Certificates onSaved={(m) => toast.show(m)} />
         <Payments key={`o-${s.online_payments_enabled}`} onSaved={async (on) => { await reload(); toast.show(on ? 'Online payment is ON' : 'Online payment is OFF'); }} />
       </div>
       {toast.node}
@@ -127,7 +131,7 @@ function Payments({ onSaved }: { onSaved: (on: boolean) => Promise<void> }) {
   );
 }
 
-const COLOURS = ['#0E7C5F', '#1F4E9A', '#7A1F3D', '#B54708', '#5B2A86', '#0B6E99', '#9A1F1F', '#2F3B4C'];
+const COLOURS = ['#0B7FA6', '#0E7C5F', '#1F4E9A', '#7A1F3D', '#B54708', '#5B2A86', '#0B6E99', '#9A1F1F', '#2F3B4C'];
 
 function Identity({ onSaved }: { onSaved: (m: string) => Promise<void> }) {
   const { info } = useSchool();
@@ -153,7 +157,7 @@ function Identity({ onSaved }: { onSaved: (m: string) => Promise<void> }) {
         <h2>School identity</h2>
         <p className="muted small" style={{ marginTop: 4 }}>
           Your logo and colour appear on what families see: the school website, the parent app, receipts and report cards.
-          Staff screens like this one use the AIEdu look.
+          Staff screens like this one use the Arscio look.
         </p>
       </div>
       <div className="row" style={{ gap: 18, alignItems: 'center' }}>
@@ -179,7 +183,7 @@ function Identity({ onSaved }: { onSaved: (m: string) => Promise<void> }) {
             <button key={c} type="button" aria-label={`Colour ${c}`} aria-pressed={color.toLowerCase() === c.toLowerCase()} onClick={() => setColor(c)}
               style={{ width: 34, height: 34, borderRadius: 999, background: c, border: color.toLowerCase() === c.toLowerCase() ? '3px solid var(--ink)' : '3px solid #fff', boxShadow: '0 0 0 1px var(--rule-strong)', cursor: 'pointer' }} />
           ))}
-          <input type="color" aria-label="Other colour" value={color || '#0E7C5F'} onChange={(e) => setColor(e.target.value)} style={{ width: 44, height: 34, border: 0, background: 'none' }} />
+          <input type="color" aria-label="Other colour" value={color || '#0B7FA6'} onChange={(e) => setColor(e.target.value)} style={{ width: 44, height: 34, border: 0, background: 'none' }} />
         </div>
       </div>
       <div className="grid-2">
@@ -196,5 +200,168 @@ function Identity({ onSaved }: { onSaved: (m: string) => Promise<void> }) {
         await onSaved('School identity saved');
       })}>Save school identity</button></div>
     </div>
+  );
+}
+
+function AdmissionNumbers({ onSaved }: { onSaved: () => void }) {
+  const year = new Date().getFullYear();
+  const [format, setFormat] = useState<string | null>(null);
+  const [nextNo, setNextNo] = useState('');
+  const [preview, setPreview] = useState('');
+  const { busy, error, run } = useSave();
+  useEffect(() => { api.get<{ format: string; next: string }>(`/students/admission-number?year=${year}`).then((r) => { setFormat(r.format); setPreview(r.next); }); }, [year]);
+  if (format === null) return null;
+  const code = preview.split(/[/-]/)[0] ?? '';
+  const live = format.replace('{CODE}', code).replace('{YEAR}', String(year)).replace('{YY}', String(year).slice(2))
+    .replace('{SEQ}', String(Number(nextNo) || Number(/(\d+)$/.exec(preview)?.[1] ?? 1)).padStart(4, '0'));
+  return (
+    <form className="sheet sheet-pad stack" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => {
+      await api.put('/school/admission-format', { format, ...(nextNo ? { year, nextNo: Number(nextNo) } : {}) }); setNextNo(''); onSaved();
+    }); }}>
+      <div><h2>Admission numbers</h2><p className="muted small" style={{ marginTop: 4 }}>
+        Given automatically when a student is added. Each student keeps the number for life.</p></div>
+      <ErrorBox error={error} />
+      <div className="grid-2">
+        <Field label="Format" htmlFor="af" hint="{CODE} school code, {YEAR} joining year, {YY} short year, {SEQ} running number">
+          <input id="af" className="input num" value={format} onChange={(e) => setFormat(e.target.value)} />
+        </Field>
+        <Field label={`Next number for ${year}`} htmlFor="an" hint="Only if you are carrying on from your old register">
+          <input id="an" className="input num" inputMode="numeric" placeholder="Leave as it is" value={nextNo} onChange={(e) => setNextNo(e.target.value.replace(/\D/g, ''))} />
+        </Field>
+      </div>
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <span className="small">The next student will get <strong className="num">{live}</strong></span>
+        <button className="btn btn-primary" disabled={busy}>Save</button>
+      </div>
+    </form>
+  );
+}
+
+interface DocType { id: string; name: string; category: string; requiredClasses: string[]; system: boolean }
+function DocumentChecklist({ onSaved }: { onSaved: (m: string) => void }) {
+  const [types, setTypes] = useState<DocType[] | null>(null);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [newName, setNewName] = useState('');
+  const { error, run } = useSave();
+  const load = () => api.get<{ types: DocType[] }>('/documents/types').then((r) => setTypes(r.types.filter((t) => t.category === 'admission' && !t.system)));
+  useEffect(() => { void load(); api.get<Structure>('/setup/structure').then((s) => setClasses(s.classes.map((c) => ({ id: c.id, name: c.name })))); }, []);
+  if (!types) return null;
+  const toggle = (t: DocType, classId: string | 'all') => run(async () => {
+    const all = classes.map((c) => c.id);
+    const next = classId === 'all'
+      ? (t.requiredClasses.length === all.length ? [] : all)
+      : t.requiredClasses.includes(classId) ? t.requiredClasses.filter((x) => x !== classId) : [...t.requiredClasses, classId];
+    await api.put(`/documents/types/${t.id}`, { requiredClasses: next });
+    setTypes(types.map((x) => (x.id === t.id ? { ...x, requiredClasses: next } : x)));
+  });
+  return (
+    <div className="sheet sheet-pad stack">
+      <div><h2>Documents needed at admission</h2><p className="muted small" style={{ marginTop: 4 }}>
+        Tick what each class must bring. The office sees a checklist in every student’s file.</p></div>
+      <ErrorBox error={error} />
+      <div className="table-wrap">
+        <table className="register doc-matrix">
+          <thead><tr><th>Document</th><th className="c">All</th>{classes.map((c) => <th key={c.id} className="c">{classLabel(c.name).replace('Class ', '')}</th>)}</tr></thead>
+          <tbody>
+            {types.map((t) => (
+              <tr key={t.id}>
+                <th scope="row">{t.name}</th>
+                <td className="c"><input type="checkbox" aria-label={`${t.name}: all classes`} checked={classes.length > 0 && t.requiredClasses.length === classes.length} onChange={() => void toggle(t, 'all')} /></td>
+                {classes.map((c) => (
+                  <td key={c.id} className="c"><input type="checkbox" aria-label={`${t.name}: ${classLabel(c.name)}`}
+                    checked={t.requiredClasses.includes(c.id)} onChange={() => void toggle(t, c.id)} /></td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <form className="row" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => {
+        await api.post('/documents/types', { name: newName }); setNewName(''); await load(); onSaved(`${newName} added to the list`);
+      }); }}>
+        <input className="input" style={{ maxWidth: 300 }} placeholder="Another document, e.g. Migration certificate" aria-label="New document name"
+          value={newName} onChange={(e) => setNewName(e.target.value)} />
+        <button className="btn btn-plain" disabled={newName.trim().length < 2}>Add to the list</button>
+      </form>
+    </div>
+  );
+}
+
+interface CertSettings {
+  kinds: { kind: string; title: string; signMode: 'printed' | 'hand'; signerRole: 'principal' | 'owner' }[];
+  signatures: { role: 'principal' | 'owner'; defaultTitle: string; uploaded: boolean; signerName: string | null; signerTitle: string | null; updatedAt: string | null }[];
+}
+function Certificates({ onSaved }: { onSaved: (m: string) => void }) {
+  const [c, setC] = useState<CertSettings | null>(null);
+  const [v, setV] = useState(0);
+  const { error, run } = useSave();
+  useEffect(() => { api.get<CertSettings>('/certificates/settings').then(setC); }, [v]);
+  if (!c) return null;
+  const setKind = (kind: string, patch: Partial<CertSettings['kinds'][number]>) => run(async () => {
+    const k = { ...c.kinds.find((x) => x.kind === kind)!, ...patch };
+    await api.put(`/certificates/settings/${kind}`, { signMode: k.signMode, signerRole: k.signerRole });
+    setC({ ...c, kinds: c.kinds.map((x) => (x.kind === kind ? k : x)) });
+    onSaved(`${k.title}: saved`);
+  });
+  return (
+    <div className="sheet sheet-pad stack">
+      <div><h2>Certificates and signatures</h2><p className="muted small" style={{ marginTop: 4 }}>
+        For each certificate, choose a printed signature or signing by hand, and whose signature it is.</p></div>
+      <ErrorBox error={error} />
+      <table className="register cert-settings">
+        <thead><tr><th>Certificate</th><th>How it is signed</th><th>Signed by</th></tr></thead>
+        <tbody>
+          {c.kinds.map((k) => (
+            <tr key={k.kind}>
+              <th scope="row">{k.title}</th>
+              <td>
+                <div className="seg" role="radiogroup" aria-label={`${k.title}: how it is signed`}>
+                  <button type="button" role="radio" aria-checked={k.signMode === 'printed'} className={k.signMode === 'printed' ? 'on' : ''} onClick={() => void setKind(k.kind, { signMode: 'printed' })}>Printed signature</button>
+                  <button type="button" role="radio" aria-checked={k.signMode === 'hand'} className={k.signMode === 'hand' ? 'on' : ''} onClick={() => void setKind(k.kind, { signMode: 'hand' })}>By hand</button>
+                </div>
+              </td>
+              <td>
+                <select className="input" style={{ padding: '7px 10px' }} aria-label={`${k.title}: signed by`} value={k.signerRole}
+                  onChange={(e) => void setKind(k.kind, { signerRole: e.target.value as 'principal' | 'owner' })}>
+                  <option value="principal">Principal</option><option value="owner">Owner / director</option>
+                </select>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="grid-2">
+        {c.signatures.map((s) => <SignatureCard key={s.role} s={s} onSaved={() => { setV((x) => x + 1); onSaved('Signature saved'); }}
+          needed={c.kinds.some((k) => k.signMode === 'printed' && k.signerRole === s.role)} />)}
+      </div>
+    </div>
+  );
+}
+
+function SignatureCard({ s, needed, onSaved }: { s: CertSettings['signatures'][number]; needed: boolean; onSaved: () => void }) {
+  const [name, setName] = useState(s.signerName ?? '');
+  const [title, setTitle] = useState(s.signerTitle ?? '');
+  const [img, setImg] = useState<string | null>(null);
+  const { busy, error, run } = useSave();
+  const who = s.role === 'principal' ? 'Principal' : 'Owner / director';
+  return (
+    <form className={`sig-card ${needed && !s.uploaded ? 'is-needed' : ''}`} onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => {
+      await api.put(`/signatures/${s.role}`, { signerName: name, signerTitle: title || null, ...(img ? { dataUrl: img } : {}) }); setImg(null); onSaved();
+    }); }}>
+      <strong>{who}’s signature</strong>
+      {needed && !s.uploaded ? <div className="small" style={{ color: '#8A4B05' }}>Needed: a certificate is set to use it.</div> : null}
+      <label className="sig-box">
+        {img ? <img src={img} alt="New signature" /> : s.uploaded ? <img src={`${fileUrl(`/signatures/${s.role}/image`)}?v=${s.updatedAt}`} alt={`${who} signature`} /> : <span className="muted small">Upload a photo of the signature on white paper (PNG or JPG)</span>}
+        <input type="file" accept="image/png,image/jpeg" className="sr-only" onChange={async (e) => {
+          const f = e.target.files?.[0]; e.target.value = ''; if (f) setImg(await readUpload(f, { maxSide: 600, quality: 0.9, alwaysShrink: true }));
+        }} />
+      </label>
+      <ErrorBox error={error} />
+      <div className="grid-2" style={{ gap: 8 }}>
+        <input className="input" aria-label="Name printed under the signature" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="input" aria-label="Title printed under the signature" placeholder={s.defaultTitle} value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+      <button className="btn btn-plain" disabled={busy || name.trim().length < 2 || (!img && !s.uploaded)}>{busy ? 'Saving…' : 'Save signature'}</button>
+    </form>
   );
 }

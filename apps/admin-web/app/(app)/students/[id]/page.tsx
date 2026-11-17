@@ -7,11 +7,13 @@ import { showPhone } from '@/lib/types';
 import { StudentForm, toPayload, type StudentValues } from '@/components/StudentForm';
 import { useSchool } from '@/components/AppShell';
 import { Loading, useToast } from '@/components/ui';
+import { StudentTabs } from '@/components/StudentTabs';
+import { photoSrc } from '@/lib/api';
 
 interface Detail {
   id: string; admissionNo: string; firstName: string; lastName: string | null; dateOfBirth: string | null;
   gender: string | null; bloodGroup: string | null; admissionDate: string | null; status: string;
-  sectionId: string | null; rollNo: number | null;
+  sectionId: string | null; rollNo: number | null; photoUrl: string | null;
   family: { phone: string; fatherName: string | null; motherName: string | null; guardianName: string | null; altPhone: string | null; address: string | null };
   siblings: { id: string; name: string }[] | null;
 }
@@ -41,7 +43,11 @@ export default function StudentPage() {
   return (
     <>
       <div className="page-head">
-        <div>
+        <div className="row" style={{ gap: 16 }}>
+          <div className="photo-round photo-sm" aria-hidden>
+            {d.photoUrl ? <img src={photoSrc(d.photoUrl)!} alt="" /> : <span>{`${d.firstName[0] ?? ''}${d.lastName?.[0] ?? ''}`.toUpperCase()}</span>}
+          </div>
+          <div>
           <Link href="/students" className="small">Students</Link>
           <h1 style={{ marginTop: 4 }}>{d.firstName} {d.lastName ?? ''}</h1>
           {d.siblings?.length ? (
@@ -49,8 +55,10 @@ export default function StudentPage() {
               <span key={x.id}>{i ? ', ' : ''}<Link href={`/students/${x.id}`}>{x.name.trim()}</Link></span>
             ))}</p>
           ) : null}
+          </div>
         </div>
       </div>
+      <StudentTabs id={id} />
       {can('students.manage') ? (
         <StudentForm key={version} initial={initial} editing submitLabel="Save changes"
           onSubmit={async (v) => {

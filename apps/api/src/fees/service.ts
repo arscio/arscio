@@ -148,7 +148,10 @@ export async function createReceipt(tx: Tx, input: CreateReceiptInput, collected
       [meta.school_id, yearId],
     )
   ).rows[0]!.n;
-  const receiptNo = `${meta.prefix}/${meta.year}/${String(no).padStart(5, '0')}`;
+  // Format decided with the school: PREFIX/SESSION/MONTH/RUNNING-NO, e.g. GV/2026-27/11/0142.
+  // The running number continues through the whole session (it does not restart each month).
+  const paidOn = input.paidOn ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const receiptNo = `${meta.prefix}/${meta.year}/${paidOn.slice(5, 7)}/${String(no).padStart(4, '0')}`;
 
   const receipt = (
     await tx.query(

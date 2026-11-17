@@ -14,8 +14,10 @@ export interface DbContext {
   accountId?: string | null;
 }
 
-export function createPool(connectionString: string): Db {
-  const pool = new pg.Pool({ connectionString, max: 20 });
+// Connection budget on the shared server (PostgreSQL allows 30): website/apps 12 + background jobs 4 +
+// control panel 3 = 19, leaving room for backups and maintenance.
+export function createPool(connectionString: string, max = 12): Db {
+  const pool = new pg.Pool({ connectionString, max });
   // Keep money as exact strings ("1500.00"), never floating-point numbers.
   pg.types.setTypeParser(pg.types.builtins.NUMERIC, (v) => v);
   // Keep plain dates as "YYYY-MM-DD" text so timezones never shift them.

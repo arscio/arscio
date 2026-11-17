@@ -2,10 +2,12 @@
 // students by hand (until we have the school's Excel file).
 import type { FastifyInstance, preHandlerHookHandler } from 'fastify';
 import { z } from 'zod';
-import { ROLES, canAssignRole, normalizeIndianPhone, type Role } from '@aiedu/shared';
+import { nextAdmissionNo } from '../students/file.js';
+import { GRANTABLE, ROLES, canAssignRole, normalizeIndianPhone, type Permission, type Role } from '@arscio/shared';
 import type { Db, Tx } from '../db.js';
 import { badRequest, forbidden, notFound } from '../errors.js';
 import { must, schoolTx } from '../context.js';
+import type { AuthService } from '../auth/service.js';
 
 const uuid = z.string().uuid();
 const phone = z.string().transform((v, ctx) => {
@@ -38,7 +40,22 @@ async function currentYear(tx: Tx) {
   return y;
 }
 
-export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool: preHandlerHookHandler) {
+export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool: preHandlerHookHandler, auth: AuthService) {
+  const email = z.string().trim().toLowerCase().max(120).email('Enter a valid email address').optional().nullable()
+    .or(z.literal('').transform(() => null));
+  const tempPassword = z.string().min(6, 'Password must be at least 6 characters').max(128);
+
+  /** Only an owner may change another owner's login; nobody changes their own here. */
+  async function guardTarget(tx: Tx, req: Parameters<typeof must>[0], membershipId: string) {
+    const t = (await tx.query<{ account_id: string; roles: string[] }>(
+      `SELECT m.account_id, coalesce(array_agg(r.role) FILTER (WHERE r.role IS NOT NULL), '{}') AS roles
+         FROM memberships m LEFT JOIN membership_roles r ON r.membership_id = m.id
+        WHERE m.id = $1 AND m.school_id = $2 GROUP BY m.id`, [membershipId, req.school!.schoolId])).rows[0];
+    if (!t || !t.roles.some((r) => r !== 'parent')) throw notFound('Staff member not found');
+    if (membershipId === req.school!.membershipId) throw forbidden('Use "Change password" for your own login');
+    if (t.roles.includes('owner') && !req.school!.roles.includes('owner')) throw forbidden('Only the owner can change this login');
+    return t.account_id;
+  }
   const pre = { preHandler: requireSchool };
 
   // ---------- Overview of the school's structure ----------
@@ -209,12 +226,14 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
     return schoolTx(db, req, async (tx) => ({
       staff: (await tx.query(
         `SELECT m.id AS "membershipId", m.account_id AS "accountId", m.display_name AS name,
-                m.designation, m.employee_code AS "employeeCode", m.status, a.phone,
-                (a.password_hash IS NOT NULL) AS "hasLoggedIn",
-                coalesce(array_agg(r.role ORDER BY r.role) FILTER (WHERE r.role IS NOT NULL), '{}') AS roles
+                m.designation, m.employee_code AS "employeeCode", m.status, a.phone, a.email,
+                (a.password_hash IS NOT NULL) AS "hasLoggedIn", a.must_change_password AS "mustChangePassword",
+                coalesce(array_agg(r.role ORDER BY r.role) FILTER (WHERE r.role IS NOT NULL), '{}') AS roles,
+                (SELECT coalesce(array_agg(p.permission), '{}') FROM membership_permissions p WHERE p.membership_id = m.id) AS extra
            FROM memberships m
            JOIN accounts a ON a.id = m.account_id
            LEFT JOIN membership_roles r ON r.membership_id = m.id
+          WHERE m.school_id = app_school_id()
           GROUP BY m.id, a.id
          HAVING bool_or(r.role IS DISTINCT FROM 'parent')
           ORDER BY m.status, m.display_name`)).rows,
@@ -226,10 +245,14 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
     const b = z.object({
       name: z.string().trim().min(2).max(100),
       phone,
+      email,
+      // First password, given by the principal. The teacher must change it after logging in.
+      password: tempPassword.optional(),
       designation: optText(60),
       employeeCode: optText(30),
       roles: z.array(z.enum(ROLES)).min(1, 'Choose at least one role'),
     }).parse(req.body);
+    if (b.roles.includes('parent')) throw badRequest('bad_role', 'Parents get their login from the student record');
     for (const r of new Set<Role>(b.roles)) {
       if (!canAssignRole(req.school!.roles, r)) throw forbidden(`You cannot give the ${r} role`);
     }
@@ -237,6 +260,7 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
       const account = (await tx.query<{ id: string }>(
         `INSERT INTO accounts (phone, name) VALUES ($1, $2)
          ON CONFLICT (phone) DO UPDATE SET phone = excluded.phone RETURNING id`, [b.phone, b.name])).rows[0]!;
+      if (b.email) await setEmail(tx, account.id, b.email);
       const existing = (await tx.query<{ id: string }>(
         'SELECT id FROM memberships WHERE account_id = $1 AND school_id = $2', [account.id, req.school!.schoolId])).rows[0];
       let membershipId: string;
@@ -261,7 +285,30 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
           [req.school!.schoolId, membershipId, r, req.accountId]);
       }
       return { membershipId, accountId: account.id };
+    }).then(async (r) => {
+      // Saved after the staff record, so a failed save never leaves a stray password behind.
+      if (b.password) {
+        const has = (await db.query('SELECT password_hash IS NOT NULL AS has FROM accounts WHERE id = $1', [r.accountId])).rows[0]?.has;
+        if (!has) await auth.setTemporaryPassword(r.accountId, b.password);
+      }
+      return r;
     });
+  });
+
+  /** Principal gives a staff member a new password (first login, or they forgot it). */
+  app.post('/staff/:membershipId/password', pre, async (req) => {
+    must(req, 'roles.assign');
+    const { membershipId } = z.object({ membershipId: uuid }).parse(req.params);
+    const { password } = z.object({ password: tempPassword }).parse(req.body);
+    const accountId = await schoolTx(db, req, async (tx) => {
+      const id = await guardTarget(tx, req, membershipId);
+      await tx.query(
+        `INSERT INTO audit_log (school_id, account_id, action, table_name, row_id)
+         VALUES ($1, $2, 'SET_STAFF_PASSWORD', 'accounts', $3)`, [req.school!.schoolId, req.accountId, id]);
+      return id;
+    });
+    await auth.setTemporaryPassword(accountId, password);
+    return { ok: true };
   });
 
   app.patch('/staff/:membershipId', pre, async (req) => {
@@ -271,12 +318,19 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
       name: z.string().trim().min(2).max(100).optional(),
       designation: optText(60),
       employeeCode: optText(30),
+      email,
       status: z.enum(['active', 'inactive']).optional(),
     }).parse(req.body);
     if (b.status === 'inactive' && membershipId === req.school!.membershipId) {
       throw forbidden('You cannot deactivate yourself');
     }
-    return schoolTx(db, req, async (tx) => {
+    let removedAccount: string | null = null;
+    const result = await schoolTx(db, req, async (tx) => {
+      if (b.status || b.email !== undefined) {
+        const accountId = await guardTarget(tx, req, membershipId);
+        if (b.email !== undefined) await setEmail(tx, accountId, b.email);
+        if (b.status === 'inactive') removedAccount = accountId;
+      }
       const r = await tx.query(
         `UPDATE memberships SET display_name = coalesce($2, display_name),
            designation = CASE WHEN $7 THEN $3 ELSE designation END,
@@ -286,6 +340,29 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
         [membershipId, b.name ?? null, b.designation, b.employeeCode, b.status ?? null, req.school!.schoolId,
          sent(req.body, 'designation'), sent(req.body, 'employeeCode')]);
       if (!r.rowCount) throw notFound('Staff member not found');
+      return { ok: true };
+    });
+    // A teacher who has left is logged out of every phone and computer straight away
+    // (unless they are still a parent here, in which case only the staff access goes).
+    if (removedAccount) await auth.revokeAll(removedAccount);
+    return result;
+  });
+
+  /** Give or take away an extra permission (e.g. Excel import and export). Owner and principal only. */
+  app.put('/staff/:membershipId/permissions/:permission', pre, async (req) => {
+    must(req, 'roles.assign');
+    const p = z.object({ membershipId: uuid, permission: z.enum(GRANTABLE as [Permission, ...Permission[]]) }).parse(req.params);
+    const { on } = z.object({ on: z.boolean() }).parse(req.body);
+    if (!req.school!.roles.some((r) => r === 'owner' || r === 'principal')) throw forbidden('Only the owner or principal can give this');
+    return schoolTx(db, req, async (tx) => {
+      const m = await tx.query('SELECT 1 FROM memberships WHERE id = $1 AND school_id = app_school_id()', [p.membershipId]);
+      if (!m.rowCount) throw notFound('Staff member not found');
+      if (on) {
+        await tx.query(`INSERT INTO membership_permissions (school_id, membership_id, permission, granted_by) VALUES (app_school_id(), $1, $2, $3)
+                        ON CONFLICT DO NOTHING`, [p.membershipId, p.permission, req.accountId]);
+      } else {
+        await tx.query('DELETE FROM membership_permissions WHERE membership_id = $1 AND permission = $2', [p.membershipId, p.permission]);
+      }
       return { ok: true };
     });
   });
@@ -322,7 +399,8 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
   });
 
   const studentBody = z.object({
-    admissionNo: z.string().trim().min(1, 'Admission number is required').max(30),
+    admissionNo: z.string().trim().max(30).optional().nullable(),
+    aadhaarLast4: z.string().regex(/^\d{4}$/, 'Enter only the last 4 digits of Aadhaar').optional().nullable(),
     firstName: z.string().trim().min(1, 'First name is required').max(60),
     lastName: optText(60),
     dateOfBirth: date.optional().nullable(),
@@ -384,13 +462,16 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
         [schoolId, b.family.phone, account.id, b.family.fatherName, b.family.motherName,
          b.family.guardianName, b.family.altPhone, b.family.address])).rows[0]!;
 
+      // Blank admission number -> the system gives the next one (GV/2027/0187)
+      const admissionNo = b.admissionNo || await nextAdmissionNo(tx, schoolId,
+        Number((b.admissionDate ?? new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })).slice(0, 4)));
       const student = (await tx.query<{ id: string }>(
         `INSERT INTO students (school_id, family_id, admission_no, first_name, last_name, date_of_birth,
-                               gender, blood_group, admission_date)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-        [schoolId, family.id, b.admissionNo, b.firstName, b.lastName, b.dateOfBirth ?? null,
-         b.gender ?? null, b.bloodGroup, b.admissionDate ?? null])
-        .catch((e) => friendly(e, { duplicate: `Admission number ${b.admissionNo} is already used` }))).rows[0]!;
+                               gender, blood_group, admission_date, aadhaar_last4)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+        [schoolId, family.id, admissionNo, b.firstName, b.lastName, b.dateOfBirth ?? null,
+         b.gender ?? null, b.bloodGroup, b.admissionDate ?? null, b.aadhaarLast4 ?? null])
+        .catch((e) => friendly(e, { duplicate: `Admission number ${admissionNo} is already used` }))).rows[0]!;
 
       await tx.query(
         `INSERT INTO enrollments (school_id, student_id, academic_year_id, section_id, roll_no)
@@ -398,7 +479,7 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
 
       const siblings = (await tx.query<{ n: number }>(
         'SELECT count(*)::int AS n FROM students WHERE family_id = $1 AND id <> $2', [family.id, student.id])).rows[0]!.n;
-      return { id: student.id, familyId: family.id, newFamily: family.created, siblings };
+      return { id: student.id, admissionNo, familyId: family.id, newFamily: family.created, siblings };
     });
   });
 
@@ -411,13 +492,16 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
         `SELECT st.id, st.admission_no AS "admissionNo", st.first_name AS "firstName", st.last_name AS "lastName",
                 st.date_of_birth AS "dateOfBirth", st.gender, st.blood_group AS "bloodGroup",
                 st.admission_date AS "admissionDate", st.status,
-                e.section_id AS "sectionId", e.roll_no AS "rollNo",
+                e.section_id AS "sectionId", e.roll_no AS "rollNo", st.photo_url AS "photoUrl",
+                c.name AS "className", sec.name AS "sectionName",
                 json_build_object('phone', f.phone, 'fatherName', f.father_name, 'motherName', f.mother_name,
                   'guardianName', f.guardian_name, 'altPhone', f.alt_phone, 'address', f.address) AS family,
                 (SELECT json_agg(json_build_object('id', o.id, 'name', o.first_name || ' ' || coalesce(o.last_name, '')))
                    FROM students o WHERE o.family_id = st.family_id AND o.id <> st.id) AS siblings
            FROM students st JOIN families f ON f.id = st.family_id
            LEFT JOIN enrollments e ON e.student_id = st.id AND e.academic_year_id = $2
+           LEFT JOIN sections sec ON sec.id = e.section_id
+           LEFT JOIN classes c ON c.id = sec.class_id
           WHERE st.id = $1`, [id, year.id])).rows[0];
       if (!s) throw notFound('Student not found');
       return s;
@@ -494,4 +578,17 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
         [req.school!.schoolId, b.name ?? null, b.address, b.phone, b.email,
          sent(req.body, 'address'), sent(req.body, 'phone'), sent(req.body, 'email')])).rows[0]);
   });
+}
+
+/** Email used for staff login: one account per email address. */
+async function setEmail(tx: Tx, accountId: string, email: string | null) {
+  try {
+    await tx.query('SAVEPOINT set_email');
+    await tx.query('UPDATE accounts SET email = $2 WHERE id = $1', [accountId, email]);
+    await tx.query('RELEASE SAVEPOINT set_email');
+  } catch (e) {
+    await tx.query('ROLLBACK TO SAVEPOINT set_email');
+    if ((e as { code?: string }).code === '23505') throw badRequest('duplicate', 'This email is already used by another login');
+    throw e;
+  }
 }

@@ -33,8 +33,8 @@ describe('Fee receipts', () => {
     const r1 = await collect('1000');
     const r2 = await collect('500.50');
     expect(r1.statusCode).toBe(200);
-    expect(r1.json().receipt_no).toBe('RC/2027-28/00001');
-    expect(r2.json().receipt_no).toBe('RC/2027-28/00002');
+    expect(r1.json().receipt_no).toMatch(/^RC\/2027-28\/\d{2}\/0001$/);
+    expect(r2.json().receipt_no).toMatch(/^RC\/2027-28\/\d{2}\/0002$/);
     expect(r2.json().total_amount).toBe('500.50');
   });
 
