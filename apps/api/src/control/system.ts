@@ -13,14 +13,13 @@ export interface ServiceInfo {
   unit: string; label: string; state: string; since: string | null; restarts: number | null; memoryMb: number | null;
 }
 
-/** The services we watch. Curavo is shown so we can see we never disturb it. */
+/** The services we watch (only Arscio's own; Curavo shares the server but isn't shown here). */
 export const SERVICES: { unit: string; label: string }[] = [
   { unit: 'arscio-api', label: 'Arscio server (apps and website talk to this)' },
   { unit: 'arscio-web', label: 'Arscio office website' },
   { unit: 'arscio-control', label: 'This control panel' },
   { unit: 'postgresql@16-main', label: 'Database' },
   { unit: 'caddy', label: 'Web gateway (https)' },
-  { unit: 'curavo-cloud', label: 'Curavo (shares this server)' },
 ];
 
 export async function services(): Promise<ServiceInfo[]> {

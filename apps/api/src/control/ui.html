@@ -110,7 +110,7 @@ body.wall .scope { min-height: 0; }
 @media (max-width: 900px) { .band { grid-template-columns: 1fr; } .band .state { border-right: 0; border-bottom: 1px solid var(--rule); } }
 
 /* ---------- service lights ---------- */
-.lights { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.lights { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 1180px) { .lights { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .light { background: var(--bg-2); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; display: flex; gap: 11px; align-items: flex-start; min-width: 0; }
 .light .lamp { width: 10px; height: 10px; margin-top: 5px; box-shadow: 0 0 0 3px var(--mint-wash), 0 0 10px rgba(87, 212, 157, .5); }
@@ -511,7 +511,7 @@ function drawDash() {
         : `<p class="muted small" style="margin:0">Server up ${span(h.machine.upSince)} · website answers in ${h.web.ms} ms · ${h.services.filter((s) => s.state === 'active').length} of ${h.services.length} services running</p>`}`;
     $('#dLights').innerHTML = h.services.map((s) => {
       const st = s.state === 'active' ? '' : s.state === 'unknown' ? 'off' : 'bad';
-      const short = { 'arscio-api': 'Arscio server', 'arscio-web': 'Office website', 'arscio-control': 'Control panel', 'postgresql@16-main': 'Database', caddy: 'Web gateway', 'curavo-cloud': 'Curavo' }[s.unit] ?? s.label;
+      const short = { 'arscio-api': 'Arscio server', 'arscio-web': 'Office website', 'arscio-control': 'Control panel', 'postgresql@16-main': 'Database', caddy: 'Web gateway' }[s.unit] ?? s.label;
       return `<div class="light" title="${esc(s.label)}"><span class="lamp ${st}"></span><div style="min-width:0"><b>${esc(short)}</b>
         <span>${s.state === 'active' ? `up ${span(s.since)}` : esc(s.state)}${s.memoryMb != null ? ` · ${s.memoryMb} MB` : ''}${s.restarts ? ` · ${s.restarts} restarts` : ''}</span></div></div>`;
     }).join('');
