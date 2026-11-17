@@ -32,7 +32,16 @@ if ! $EAS whoami >/dev/null 2>&1; then
   echo "Log in with the company Expo account (admin@arscio.in; team: arscios-team). The password is typed here, not shared with anyone."
   $EAS login
 fi
-echo "Logged in as: $($EAS whoami)"
+WHO="$($EAS whoami 2>/dev/null || true)"
+echo "$WHO"
+# The apps belong to the company's Expo team, never a personal account.
+if ! printf '%s' "$WHO" | grep -q "arscios-team"; then
+  echo
+  echo "This Mac is logged in to Expo with an account that is not part of the company team (arscios-team)."
+  echo "Logging out now. Run the same command again and log in with the company account (admin@arscio.in)."
+  $EAS logout >/dev/null 2>&1 || true
+  exit 1
+fi
 
 if [ ! -s eas-project-id.txt ]; then
   say "First time only: create the $NAME project on Expo"
