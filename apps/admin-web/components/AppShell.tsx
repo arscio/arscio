@@ -3,7 +3,7 @@
 // person's roles allow), the school's name, and who's logged in.
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ROLE_LABELS, type Permission } from '@arscio/shared';
 import { ApiError, api, auth } from '@/lib/api';
 import type { Me, SchoolInfo } from '@/lib/types';
@@ -106,20 +106,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             );
           })}
-          <div className="side-foot">
-            <div className="who">
-              <span className="initials" aria-hidden>{state.me.account.name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}</span>
-              <div>
-                <div><strong>{state.me.account.name}</strong></div>
-                <div className="muted small">{state.info.me.roles.map((r) => ROLE_LABELS[r]).join(', ')}</div>
-              </div>
-            </div>
-            <div className="links">
-              {multiSchool ? <button onClick={() => router.push('/choose-school')}>Switch school</button> : null}
-              <button onClick={() => router.push('/change-password')}>Change password</button>
-              <button onClick={async () => { await auth.logout(); router.replace('/login'); }}>Log out</button>
-            </div>
-          </div>
+          <AccountMenu
+            name={state.me.account.name}
+            roles={state.info.me.roles.map((r) => ROLE_LABELS[r]).join(', ')}
+            multiSchool={multiSchool}
+            onSwitch={() => router.push('/choose-school')}
+            onPassword={() => router.push('/change-password')}
+            onLogout={async () => { await auth.logout(); router.replace('/login'); }}
+          />
         </nav>
         <main className="main">
           <button className="btn btn-plain menu-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu">Menu</button>
@@ -167,5 +161,45 @@ function NavIcon({ href }: { href: string }) {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
       {d.map((p) => <path key={p} d={p} />)}
     </svg>
+  );
+}
+
+// Who's logged in, at the foot of the menu. The card itself is the button: clicking it opens a small
+// menu with "Change password" and "Log out", so they are not on show all the time.
+function AccountMenu({ name, roles, multiSchool, onSwitch, onPassword, onLogout }: {
+  name: string; roles: string; multiSchool: boolean;
+  onSwitch: () => void; onPassword: () => void; onLogout: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const path = usePathname();
+  useEffect(() => { setOpen(false); }, [path]);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', away);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', away); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  const initials = name.split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <div className="side-foot" ref={box}>
+      {open ? (
+        <div className="account-menu" role="menu" aria-label="Your account">
+          {multiSchool ? <button role="menuitem" onClick={onSwitch}>Switch school</button> : null}
+          <button role="menuitem" onClick={onPassword}>Change password</button>
+          <button role="menuitem" className="danger" onClick={onLogout}>Log out</button>
+        </div>
+      ) : null}
+      <button className="who" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="initials" aria-hidden>{initials}</span>
+        <span className="who-text">
+          <strong>{name}</strong>
+          <span className="muted small">{roles}</span>
+        </span>
+        <svg className="who-chevron" width="16" height="16" viewBox="0 0 16 16" aria-hidden><path d="M4 10l4-4 4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+    </div>
   );
 }
