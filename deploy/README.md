@@ -91,6 +91,12 @@ What it has:
   resume it, and give the owner a new one-time password.
 - **Activity**: the last 14 days: people using Arscio, attendance taken, receipts, marks, messages, errors.
 
+**Dashboard and wall mode.** The Dashboard shows everything live: services, processor, memory, disk,
+requests a minute, response time, errors, today's attendance and fees, a live feed, backups and jobs.
+It refreshes itself every 10 seconds. **Wall mode** (top right) goes full screen with bigger text for an
+office TV. Tick **Keep this screen logged in** at login so the wall screen stays logged in for 30 days.
+The wall computer must keep the SSH tunnel window open; the graphs keep 14 days of history on the server.
+
 ## E. Backups
 
 Every night at 2:30 am (India time) the whole database is backed up to `/var/backups/arscio`

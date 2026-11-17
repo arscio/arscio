@@ -18,6 +18,7 @@ import { normalizeIndianPhone } from '@arscio/shared';
 import { hashPassword, verifyPassword } from '../auth/passwords.js';
 import { createSchool } from '../platform/create-school.js';
 import * as sys from './system.js';
+import type { Sample } from './sampler.js';
 
 export interface ControlDeps {
   owner: pg.Pool;
@@ -29,11 +30,13 @@ export interface ControlDeps {
   loginMode: 'otp' | 'password';
   publicWebUrl?: string;         // where school staff log in (shown after onboarding)
   system?: Partial<typeof sys>;  // replaced in tests
+  sampler?: { live: Sample[] };  // the last hour of 10-second machine readings
   logger?: boolean;
 }
 
 const COOKIE = 'arscio_control';
 const SESSION_HOURS = 12;
+const WALL_DAYS = 30;
 
 /** Easy to read out over the phone: no 0/O or 1/l look-alikes. */
 export function tempPassword(length = 10) {
@@ -77,19 +80,29 @@ export async function buildControlApp(d: ControlDeps) {
   });
 
   // Never cached; never shown inside another site.
-  app.addHook('onSend', async (_req, reply) => {
-    reply.header('cache-control', 'no-store').header('x-frame-options', 'DENY').header('x-content-type-options', 'nosniff');
+  app.addHook('onSend', async (req, reply) => {
+    if (!req.url.startsWith('/fonts/')) reply.header('cache-control', 'no-store');
+    reply.header('x-frame-options', 'DENY').header('x-content-type-options', 'nosniff');
   });
 
   const ui = await readFile(path.join(path.dirname(fileURLToPath(import.meta.url)), 'ui.html'), 'utf8');
   app.get('/', async (_req, reply) => reply.type('text/html; charset=utf-8').send(ui));
+  const fontDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fonts');
+  app.get('/fonts/:name', async (req, reply) => {
+    const { name } = z.object({ name: z.string().regex(/^[a-z]+-\d{3}\.woff2$/) }).parse(req.params);
+    const data = await readFile(path.join(fontDir, name)).catch(() => null);
+    if (!data) return reply.status(404).send({ error: { message: 'Not found' } });
+    return reply.type('font/woff2').header('cache-control', 'public, max-age=31536000, immutable').send(data);
+  });
 
   app.post('/api/login', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req, reply) => {
-    const { password } = z.object({ password: z.string().min(1).max(200) }).parse(req.body);
+    const { password, remember } = z.object({ password: z.string().min(1).max(200), remember: z.boolean().default(false) }).parse(req.body);
     if (!(await verifyPassword(d.passwordHash, password))) return reply.status(401).send({ error: { message: 'Wrong password' } });
-    const exp = Math.floor(Date.now() / 1000) + SESSION_HOURS * 3600;
-    await log('control_login', null, {});
-    return reply.header('set-cookie', `${COOKIE}=${sign(exp)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_HOURS * 3600}`).send({ ok: true });
+    // "Keep this screen logged in" is for the office wall screen: 30 days instead of 12 hours.
+    const secs = remember ? WALL_DAYS * 86400 : SESSION_HOURS * 3600;
+    const exp = Math.floor(Date.now() / 1000) + secs;
+    await log('control_login', null, { remember });
+    return reply.header('set-cookie', `${COOKIE}=${sign(exp)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${secs}`).send({ ok: true });
   });
   app.post('/api/logout', async (_req, reply) =>
     reply.header('set-cookie', `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`).send({ ok: true }));
@@ -245,6 +258,98 @@ export async function buildControlApp(d: ControlDeps) {
     await log('owner_password_reset', id, {});
     return { password };
   });
+
+  // ---------------- Dashboard ----------------
+  const TODAY = "(now() AT TIME ZONE 'Asia/Kolkata')::date";
+  const ist = (col: string) => `(${col} AT TIME ZONE 'Asia/Kolkata')::date`;
+
+  /** The headline numbers across all schools, for the dashboard. */
+  app.get('/api/overview', { preHandler: guard }, async () => {
+    const k = (await q(`
+      SELECT
+        (SELECT count(*)::int FROM schools WHERE status = 'active') AS "schoolsActive",
+        (SELECT count(*)::int FROM schools WHERE status <> 'active') AS "schoolsPaused",
+        (SELECT count(*)::int FROM students WHERE status = 'active') AS students,
+        (SELECT count(DISTINCT m.id)::int FROM memberships m JOIN membership_roles r ON r.membership_id = m.id AND r.role <> 'parent'
+          WHERE m.status = 'active') AS staff,
+        (SELECT count(*)::int FROM families) AS families,
+        (SELECT count(*)::int FROM families f JOIN accounts a ON a.id = f.account_id
+          WHERE a.password_hash IS NOT NULL AND NOT a.must_change_password) AS "familiesIn",
+        (SELECT count(DISTINCT account_id)::int FROM refresh_tokens WHERE ${ist('created_at')} = ${TODAY}) AS "peopleToday",
+        (SELECT coalesce(max(people), 0)::int FROM platform_metrics WHERE minute > now() - interval '5 minutes') AS "peopleNow",
+        (SELECT count(*)::int FROM sections s JOIN academic_years y ON y.id = s.academic_year_id AND y.is_current
+           JOIN schools sc ON sc.id = s.school_id AND sc.status = 'active'
+          WHERE EXISTS (SELECT 1 FROM enrollments e WHERE e.section_id = s.id)) AS "sectionsTotal",
+        (SELECT count(DISTINCT section_id)::int FROM attendance_sessions WHERE on_date = ${TODAY}) AS "sectionsTaken",
+        (SELECT count(*)::int FROM receipts WHERE status = 'active' AND ${ist('created_at')} = ${TODAY}) AS "receiptsToday",
+        (SELECT coalesce(sum(total_amount), 0)::float FROM receipts WHERE status = 'active' AND ${ist('created_at')} = ${TODAY}) AS "collectedToday",
+        (SELECT count(*)::int FROM notifications WHERE status = 'sent' AND ${ist('sent_at')} = ${TODAY}) AS "messagesToday",
+        (SELECT count(*)::int FROM notifications WHERE status = 'queued') AS queued,
+        (SELECT count(*)::int FROM platform_errors WHERE at > now() - interval '24 hours') AS "errors24h",
+        (SELECT coalesce(sum(requests), 0)::int FROM platform_metrics WHERE minute > now() - interval '24 hours') AS "requests24h",
+        (SELECT coalesce(sum(requests), 0)::int FROM platform_metrics WHERE minute > now() - interval '1 hour') AS "requests1h",
+        (SELECT max(p95_ms)::int FROM platform_metrics WHERE minute > now() - interval '1 hour') AS "p95Hour",
+        (SELECT pg_database_size(current_database()))::float AS "dbBytes"`))[0]!;
+    return { at: new Date().toISOString(), ...k };
+  });
+
+  const RANGES = {
+    '1h': { secs: 3600, bucket: 60 }, '6h': { secs: 6 * 3600, bucket: 300 },
+    '24h': { secs: 86400, bucket: 900 }, '7d': { secs: 7 * 86400, bucket: 7200 },
+  } as const;
+
+  /** Graph data: the machine (processor, memory, response time) and traffic (requests, errors). */
+  app.get('/api/series', { preHandler: guard }, async (req) => {
+    const { range } = z.object({ range: z.enum(['1h', '6h', '24h', '7d']).default('1h') }).parse(req.query);
+    const r = RANGES[range];
+    const traffic = await q(`
+      WITH b AS (SELECT generate_series(date_bin(make_interval(secs => $2), now() - make_interval(secs => $1), 'epoch'),
+                                        date_bin(make_interval(secs => $2), now(), 'epoch'), make_interval(secs => $2)) AS t)
+      SELECT extract(epoch FROM b.t)::bigint * 1000 AS t,
+             coalesce(sum(m.requests), 0)::float / ($2 / 60.0) AS rpm,
+             coalesce(sum(m.server_errors), 0)::int AS err5, coalesce(sum(m.client_errors), 0)::int AS err4,
+             max(m.p95_ms)::int AS p95, coalesce(max(m.people), 0)::int AS people
+        FROM b LEFT JOIN platform_metrics m ON date_bin(make_interval(secs => $2), m.minute, 'epoch') = b.t
+       GROUP BY b.t ORDER BY b.t`, [r.secs, r.bucket]);
+    let machine: unknown[];
+    if (range === '1h' && d.sampler?.live.length) {
+      machine = d.sampler.live.map((p) => ({ t: p.at, cpu: p.cpu, mem: p.memUsed, memTotal: p.memTotal, swap: p.swapUsed, load: p.load1, apiMs: p.apiMs, db: p.dbConns }));
+    } else {
+      machine = await q(`
+        SELECT extract(epoch FROM date_bin(make_interval(secs => $2), at, 'epoch'))::bigint * 1000 AS t,
+               avg(cpu_pct)::float AS cpu, avg(mem_used_mb)::int AS mem, max(mem_total_mb)::int AS "memTotal",
+               avg(swap_used_mb)::int AS swap, avg(load1)::float AS load, avg(api_ms)::int AS "apiMs", avg(db_conns)::float AS db
+          FROM platform_samples WHERE at > now() - make_interval(secs => $1)
+         GROUP BY 1 ORDER BY 1`, [r.secs, r.bucket]);
+    }
+    return { range, bucketSec: r.bucket, machine, traffic };
+  });
+
+  /** What is happening right now across schools (newest first). */
+  app.get('/api/feed', { preHandler: guard }, async () => ({
+    events: await q(`
+      (SELECT r.created_at AS at, 'receipt' AS kind, s.name AS school,
+              'Fee receipt ' || r.receipt_no || ' · ₹' || to_char(r.total_amount, 'FM99,99,99,990') AS text
+         FROM receipts r JOIN schools s ON s.id = r.school_id ORDER BY r.created_at DESC LIMIT 15)
+      UNION ALL
+      (SELECT a.taken_at, 'attendance', s.name, 'Attendance taken · ' || section_label(c.name, sec.name)
+         FROM attendance_sessions a JOIN schools s ON s.id = a.school_id JOIN sections sec ON sec.id = a.section_id
+         JOIN classes c ON c.id = sec.class_id ORDER BY a.taken_at DESC LIMIT 15)
+      UNION ALL
+      (SELECT n.published_at, 'notice', s.name, 'Notice sent · ' || left(n.title, 60)
+         FROM notices n JOIN schools s ON s.id = n.school_id WHERE n.published_at IS NOT NULL ORDER BY n.published_at DESC LIMIT 10)
+      UNION ALL
+      (SELECT h.created_at, 'homework', s.name, 'Homework given · ' || section_label(c.name, sec.name)
+         FROM homework h JOIN schools s ON s.id = h.school_id JOIN sections sec ON sec.id = h.section_id
+         JOIN classes c ON c.id = sec.class_id ORDER BY h.created_at DESC LIMIT 10)
+      UNION ALL
+      (SELECT e.at, 'error', s.name, e.method || ' ' || e.route || ' · ' || left(e.message, 80)
+         FROM platform_errors e LEFT JOIN schools s ON s.id = e.school_id ORDER BY e.at DESC LIMIT 10)
+      UNION ALL
+      (SELECT l.at, 'panel', s.name, l.action
+         FROM platform_log l LEFT JOIN schools s ON s.id = l.school_id WHERE l.action <> 'control_login' ORDER BY l.at DESC LIMIT 10)
+      ORDER BY at DESC LIMIT 40`),
+  }));
 
   // ---------------- Activity ----------------
   app.get('/api/activity', { preHandler: guard }, async () => {

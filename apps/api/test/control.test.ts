@@ -126,3 +126,49 @@ describe('Health', () => {
     expect(e.errors[0]).toMatchObject({ route: '/students/:id', message: 'test explosion' });
   });
 });
+
+describe('Dashboard data', () => {
+  it('"keep this screen logged in" lasts 30 days instead of 12 hours', async () => {
+    const short = await call('POST', '/api/login', { password: 'Control#Pass1' });
+    expect(String(short.headers['set-cookie'])).toContain(`Max-Age=${12 * 3600}`);
+    const long = await call('POST', '/api/login', { password: 'Control#Pass1', remember: true });
+    expect(String(long.headers['set-cookie'])).toContain(`Max-Age=${30 * 86400}`);
+  });
+
+  it('serves the panel fonts, and nothing else from that folder', async () => {
+    const f = await call('GET', '/fonts/sora-700.woff2');
+    expect(f.statusCode).toBe(200);
+    expect(f.headers['content-type']).toBe('font/woff2');
+    expect((await call('GET', '/fonts/..%2Fapp.ts')).statusCode).toBe(400);
+  });
+
+  it('the request counter saves one row per minute with speed and errors', async () => {
+    const { RequestMetrics } = await import('../src/platform/metrics.js');
+    const m = new RequestMetrics();
+    for (const ms of [5, 10, 20, 400]) m.record(200, ms, 'a1');
+    m.record(500, 30, 'a2'); m.record(401, 3, null);
+    (m as unknown as { minute: number }).minute -= 1; // pretend that minute has ended
+    await m.flush(owner);
+    const row = (await owner.query('SELECT * FROM platform_metrics ORDER BY minute DESC LIMIT 1')).rows[0];
+    expect(row).toMatchObject({ requests: 6, server_errors: 1, client_errors: 1, people: 2, max_ms: 400 });
+  });
+
+  it('overview, graphs and live feed', async () => {
+    const o = (await call('GET', '/api/overview')).json();
+    for (const k of ['schoolsActive', 'students', 'staff', 'familiesIn', 'peopleToday', 'sectionsTotal', 'sectionsTaken',
+      'collectedToday', 'messagesToday', 'errors24h', 'requests24h', 'dbBytes']) expect(o).toHaveProperty(k);
+    expect(o.requests24h).toBeGreaterThanOrEqual(6);
+
+    await owner.query(`INSERT INTO platform_samples (at, cpu_pct, mem_used_mb, mem_total_mb, swap_used_mb, load1, api_ms, db_conns, disk_used_pct)
+                       VALUES (date_trunc('minute', now()) - interval '2 hours', 12.5, 900, 1900, 0, 0.3, 8, 5, 14) ON CONFLICT DO NOTHING`);
+    const day = (await call('GET', '/api/series?range=24h')).json();
+    expect(day.bucketSec).toBe(900);
+    expect(day.traffic.length).toBeGreaterThanOrEqual(96);
+    expect(day.machine.some((p: { cpu: number }) => p.cpu === 12.5)).toBe(true);
+    expect((await call('GET', '/api/series?range=1y')).statusCode).toBe(400);
+
+    const feed = (await call('GET', '/api/feed')).json();
+    expect(Array.isArray(feed.events)).toBe(true);
+    expect(feed.events.some((e: { kind: string }) => e.kind === 'panel')).toBe(true);
+  });
+});

@@ -9,6 +9,7 @@ import { withContext, type Db } from './db.js';
 import { AppError, badRequest, forbidden, notFound } from './errors.js';
 import { AuthService } from './auth/service.js';
 import { Tokens, sha256 } from './auth/tokens.js';
+import type { RequestMetrics } from './platform/metrics.js';
 import type { OtpSender } from './auth/otp-sender.js';
 import { can, makeGuards, must, schoolTx } from './context.js';
 import { cancelReceipt, createReceipt, studentDues } from './fees/service.js';
@@ -47,6 +48,8 @@ export interface AppDeps {
   appDownloadUrl?: string;
   /** The office website's address (marksheet QR codes point to its /verify page). */
   publicWebUrl?: string;
+  /** Counts requests per minute for the control panel's graphs. */
+  metrics?: RequestMetrics;
 }
 
 const phoneSchema = z.string().transform((v, ctx) => {
@@ -71,6 +74,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.decorateRequest('accountId', null);
   app.decorateRequest('school', null);
   await app.register(helmet);
+  if (deps.metrics) {
+    const metrics = deps.metrics;
+    // The control panel checks /health every few seconds; those checks aren't real use.
+    app.addHook('onResponse', async (req, reply) => {
+      if (req.url === '/health') return;
+      metrics.record(reply.statusCode, reply.elapsedTime, req.accountId ?? null);
+    });
+  }
   if (deps.corsOrigins?.length) await app.register(cors, { origin: deps.corsOrigins, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] });
   // Many people share one internet address: a whole school on the office Wi-Fi, or hundreds of parents
   // behind one mobile-network address (Jio/Airtel). So logged-in requests are counted per person, and only

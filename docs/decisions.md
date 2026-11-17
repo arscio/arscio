@@ -438,3 +438,19 @@ For the first real school there is no SMS (no DLT registration yet), so the serv
 - The new GitHub account username (nothing has been pushed anywhere yet).
 - SMS provider for OTPs (needs DLT registration – see roadmap). Not needed to start: the first school uses password mode.
 - Which cloud provider (e.g. DigitalOcean Bangalore, AWS Mumbai, Azure India) – decide by January.
+
+## Sections only when needed (decided 17 Nov 2026)
+
+- A class starts as one group with **no letter**: "Class 6", never "6 A". Everywhere (website, apps,
+  receipts, report cards, marksheets, messages to parents) uses one rule (`section_label` in the database,
+  `sectionLabel` in the apps).
+- Each section has **seats** (how many one room takes), set by the principal on Classes & sections.
+- **Admission is never blocked.** If a section goes past its seats, the office is told after saving, and the
+  principal sees a notice on Home and on Classes & sections: **Keep as it is** (hidden until more students
+  join) or **Make another section**.
+- Making another section: the existing one becomes **A**, the new one **B** (then C, …). The principal ticks
+  who moves (or "second half by name"). The new section gets the same seats and subject teachers; its class
+  teacher is chosen afterwards. Moved students' roll numbers are cleared.
+- Students can be moved between sections of the same class at any time. An empty section can be removed;
+  when one is left, it goes back to no letter. Past attendance and marks are not changed by moves.
+- Only owner/principal (school settings) decide; the office only admits.

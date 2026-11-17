@@ -5,115 +5,259 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Arscio control</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230B3B4C'/%3E%3Cg transform='translate(18 18) scale(.64)'%3E%3Cg fill='%237FD3EE' stroke='%237FD3EE' stroke-width='7' stroke-linejoin='round'%3E%3Cpath d='M10 89L41 12H59L90 89H74L50 33L26 89Z'/%3E%3C/g%3E%3Cpath d='M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z' fill='%23F2A33A'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23071B24'/%3E%3Cg transform='translate(18 18) scale(.64)'%3E%3Cpath d='M10 89L41 12H59L90 89H74L50 33L26 89Z' fill='%237FD3EE' stroke='%237FD3EE' stroke-width='7' stroke-linejoin='round'/%3E%3Cpath d='M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z' fill='%23F2A33A'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  :root {
-    --ink: #0B2A36; --ink-2: #3E5A66; --ink-3: #6E8791; --line: #D7E3E8; --paper: #F4F8FA; --card: #FFFFFF;
-    --peacock: #0B7FA6; --peacock-deep: #075E7C; --gold: #F2A33A; --gold-wash: #FDF1DF;
-    --good: #1E8A5A; --good-wash: #E3F4EB; --bad: #B4432F; --bad-wash: #FBE9E5; --warn: #9A5B00; --warn-wash: #FDF1DF;
-    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    --sans: "Sora", "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font: 15px/1.5 var(--sans); color: var(--ink); background: var(--paper); }
-  button, input, select { font: inherit; color: inherit; }
-  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-  .top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 28px; padding: 0 28px; height: 60px;
-         background: var(--ink); color: #fff; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.3px; font-size: 18px; }
-  .brand small { font-weight: 500; color: #9FC3D0; font-size: 13px; letter-spacing: 0; }
-  nav { display: flex; gap: 4px; flex: 1; }
-  nav button { background: none; border: 0; color: #B9D3DC; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-  nav button[aria-current="page"] { background: rgba(127, 211, 238, .14); color: #fff; }
-  .top .who { display: flex; gap: 12px; align-items: center; color: #9FC3D0; font-size: 13px; }
-  .link { background: none; border: 0; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
-  main { max-width: 1180px; margin: 0 auto; padding: 28px; }
-  h1 { font-size: 26px; letter-spacing: -.5px; margin: 0 0 4px; }
-  h2 { font-size: 16px; margin: 0 0 12px; }
-  .sub { color: var(--ink-3); margin: 0 0 22px; }
-  .grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
-  .card.wide { grid-column: 1 / -1; }
-  .status { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; border-radius: 14px; margin-bottom: 22px; }
-  .status.ok { background: var(--good-wash); }
-  .status.warn { background: var(--warn-wash); }
-  .status.bad { background: var(--bad-wash); }
-  .status .dot { flex: 0 0 14px; height: 14px; border-radius: 50%; margin-top: 7px; }
-  .ok .dot { background: var(--good); } .warn .dot { background: var(--gold); } .bad .dot { background: var(--bad); }
-  .status strong { font-size: 18px; display: block; }
-  .status ul { margin: 6px 0 0; padding-left: 18px; }
-  .status li.bad { color: var(--bad); font-weight: 600; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 6px 10px 8px 0; border-bottom: 1px solid var(--line); }
-  td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-  tr:last-child td { border-bottom: 0; }
-  .num { font-variant-numeric: tabular-nums; }
-  .muted { color: var(--ink-3); } .small { font-size: 13px; }
-  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: #EAF1F4; color: var(--ink-2); white-space: nowrap; }
-  .pill.good { background: var(--good-wash); color: var(--good); }
-  .pill.bad { background: var(--bad-wash); color: var(--bad); }
-  .pill.warn { background: var(--warn-wash); color: var(--warn); }
-  .bar { height: 8px; border-radius: 99px; background: #E6EEF2; overflow: hidden; margin: 6px 0 2px; }
-  .bar span { display: block; height: 100%; background: var(--peacock); }
-  .bar.hot span { background: var(--bad); } .bar.mid span { background: var(--gold); }
-  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 12px; }
-  .kv dt { color: var(--ink-3); } .kv dd { margin: 0; }
-  .btn { border: 0; border-radius: 10px; padding: 9px 16px; font-weight: 700; cursor: pointer; background: #E6EEF2; }
-  .btn.primary { background: var(--peacock); color: #fff; }
-  .btn.primary:hover { background: var(--peacock-deep); }
-  .btn.danger { background: var(--bad-wash); color: var(--bad); }
-  .btn:disabled { opacity: .5; cursor: default; }
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .between { justify-content: space-between; }
-  form .f { display: grid; gap: 4px; margin-bottom: 12px; }
-  form label { font-weight: 600; font-size: 13px; }
-  form .hint { font-size: 12px; color: var(--ink-3); }
-  input, select { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; background: #fff; width: 100%; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .err { color: var(--bad); font-weight: 600; min-height: 1.5em; }
-  .creds { border: 2px dashed var(--peacock); border-radius: 14px; padding: 18px 20px; background: #fff; }
-  .creds .pw { font: 700 24px var(--mono); letter-spacing: 2px; color: var(--peacock-deep); }
-  .panel { position: fixed; inset: 0 0 0 auto; width: min(560px, 100%); background: var(--card); box-shadow: -20px 0 50px rgba(11, 42, 54, .18);
-           padding: 24px 26px; overflow: auto; z-index: 10; }
-  .shade { position: fixed; inset: 0; background: rgba(11, 42, 54, .25); z-index: 9; }
-  .login { max-width: 380px; margin: 14vh auto; }
-  .mono { font-family: var(--mono); font-size: 12.5px; }
-  .scroll { max-height: 360px; overflow: auto; }
-  .hidden { display: none !important; }
-  @media (max-width: 700px) { .top { gap: 10px; padding: 0 14px; } .brand small { display: none; } main { padding: 18px 14px; } .two, .three { grid-template-columns: 1fr; } }
-  @media print { .top, .panel .row, .shade { display: none; } .panel { position: static; box-shadow: none; } }
+@font-face { font-family: Sora; font-weight: 600; font-display: swap; src: url(/fonts/sora-600.woff2) format('woff2'); }
+@font-face { font-family: Sora; font-weight: 700; font-display: swap; src: url(/fonts/sora-700.woff2) format('woff2'); }
+@font-face { font-family: Manrope; font-weight: 400; font-display: swap; src: url(/fonts/manrope-400.woff2) format('woff2'); }
+@font-face { font-family: Manrope; font-weight: 500; font-display: swap; src: url(/fonts/manrope-500.woff2) format('woff2'); }
+@font-face { font-family: Manrope; font-weight: 600; font-display: swap; src: url(/fonts/manrope-600.woff2) format('woff2'); }
+@font-face { font-family: Manrope; font-weight: 700; font-display: swap; src: url(/fonts/manrope-700.woff2) format('woff2'); }
+
+:root {
+  /* Deep peacock night: the panel sits in Arscio's own colours */
+  --bg: #061820; --bg-2: #08212B;
+  --surface: #0B2733; --surface-2: #0F3140; --rule: #17404F; --grid: rgba(127, 211, 238, .07);
+  --ink: #E4F0F4; --ink-2: #A3C2CD; --ink-3: #6B8F9C;
+  --sky: #7FD3EE; --lagoon: #22B3C4; --gold: #F2A33A; --coral: #FF6F61; --mint: #57D49D;
+  --sky-wash: rgba(127, 211, 238, .12); --gold-wash: rgba(242, 163, 58, .14); --coral-wash: rgba(255, 111, 97, .14); --mint-wash: rgba(87, 212, 157, .13);
+  --r: 14px; --r-sm: 9px;
+  --display: Sora, 'Manrope', system-ui, sans-serif;
+  --body: Manrope, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 15px;
+}
+body.wall { font-size: clamp(15px, 0.95vw, 22px); }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font-family: var(--body); line-height: 1.45; font-size: 1rem; -webkit-font-smoothing: antialiased; min-height: 100vh;
+  background: radial-gradient(1200px 600px at 85% -10%, rgba(34, 179, 196, .10), transparent 60%), var(--bg); }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: 1.6rem; } h2 { font-size: 1rem; color: var(--ink); } h3 { font-size: .93rem; }
+p { margin: 0 0 .6em; }
+a { color: var(--sky); }
+button { font: inherit; color: inherit; }
+.num, td.num, .tnum { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: .86em; }
+.muted { color: var(--ink-2); } .faint { color: var(--ink-3); } .small { font-size: .86rem; } .tiny { font-size: .76rem; }
+.hidden { display: none !important; }
+:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+
+/* ---------- top bar ---------- */
+.top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 22px; padding: 12px 26px;
+  background: rgba(6, 24, 32, .86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--rule); }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 700; font-size: 1.12rem; }
+.brand span { color: var(--ink-3); font-weight: 600; }
+.host { font-size: .78rem; color: var(--ink-3); border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+nav { display: flex; gap: 2px; background: var(--bg-2); padding: 3px; border-radius: 11px; border: 1px solid var(--rule); }
+nav button { background: none; border: 0; padding: 7px 14px; border-radius: 8px; color: var(--ink-2); cursor: pointer; font-weight: 600; font-size: .92rem; }
+nav button:hover { color: var(--ink); }
+nav button[aria-current='page'] { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--rule); }
+.spacer { flex: 1; }
+.clock { text-align: right; line-height: 1.1; }
+.clock b { font-family: var(--display); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.clock small { display: block; color: var(--ink-3); font-size: .74rem; }
+.tool { background: var(--surface); border: 1px solid var(--rule); color: var(--ink-2); border-radius: 10px; padding: 7px 12px; cursor: pointer; font-weight: 600; font-size: .86rem; }
+.tool:hover { color: var(--ink); border-color: #245768; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); display: inline-block; margin-right: 6px; }
+.pulse.busy { animation: blink 1s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: .25; } }
+body.wall .top { padding: 14px 32px; }
+body.wall nav, body.wall .tool.hide-wall { display: none; }
+
+main { padding: 22px 26px 60px; max-width: 1920px; margin: 0 auto; }
+body.wall main { padding: 18px 32px 18px; }
+/* Wall mode fits one 1080p screen: the schools table moves out (its totals are in "Schools today"),
+   and the bottom row shares machine, live feed, and backups and jobs. */
+body.wall #dSchools { display: none; }
+body.wall #dMachineCard { grid-column: span 5; }
+body.wall #dLiveCard { grid-column: span 4; }
+body.wall #dOps { grid-column: span 3; }
+body.wall .feed { max-height: 190px; overflow: hidden; }
+body.wall .gauge svg { height: 26px; }
+body.wall .band .state, body.wall .scope { padding-top: 14px; padding-bottom: 10px; }
+body.wall .scope { min-height: 0; }
+
+/* ---------- cards ---------- */
+.card { background: linear-gradient(180deg, var(--surface), rgba(11, 39, 51, .7)); border: 1px solid var(--rule); border-radius: var(--r); padding: 16px 18px; min-width: 0; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.card-head .meta { font-size: .8rem; color: var(--ink-3); }
+.grid { display: grid; gap: 14px; }
+.dash { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.c3 { grid-column: span 3; } .c4 { grid-column: span 4; } .c5 { grid-column: span 5; } .c6 { grid-column: span 6; }
+.c7 { grid-column: span 7; } .c8 { grid-column: span 8; } .c9 { grid-column: span 9; } .c12 { grid-column: span 12; }
+@media (max-width: 1180px) { .c3, .c4, .c5 { grid-column: span 6; } .c6, .c7, .c8, .c9 { grid-column: span 12; } }
+@media (max-width: 720px) { .c3, .c4, .c5, .c6 { grid-column: span 12; } .top { flex-wrap: wrap; } .host { display: none; } }
+
+/* ---------- status band: the one loud thing ---------- */
+.band { display: grid; grid-template-columns: minmax(280px, 30%) 1fr; gap: 0; padding: 0; overflow: hidden; }
+.band .state { padding: 20px 22px; border-right: 1px solid var(--rule); display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.band .state .line { display: flex; align-items: center; gap: 12px; }
+.lamp { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; background: var(--mint); box-shadow: 0 0 0 4px var(--mint-wash), 0 0 18px rgba(87, 212, 157, .55); }
+.lamp.warn { background: var(--gold); box-shadow: 0 0 0 4px var(--gold-wash), 0 0 18px rgba(242, 163, 58, .5); }
+.lamp.bad { background: var(--coral); box-shadow: 0 0 0 4px var(--coral-wash), 0 0 18px rgba(255, 111, 97, .55); animation: blink 1.4s ease-in-out infinite; }
+.lamp.off { background: var(--ink-3); box-shadow: none; }
+.band .state h1 { font-size: 1.75rem; }
+.warnings { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: .9rem; }
+.warnings li { padding-left: 14px; position: relative; color: var(--ink-2); }
+.warnings li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+.warnings li.bad::before { background: var(--coral); }
+.scope { position: relative; padding: 14px 18px 10px; min-height: 150px; }
+.scope .read { position: absolute; top: 12px; right: 18px; text-align: right; z-index: 1; }
+.scope .read b { font-family: var(--display); font-size: 2.2rem; font-weight: 600; color: var(--sky); font-variant-numeric: tabular-nums; }
+.scope .read span { color: var(--ink-3); font-size: .82rem; }
+.scope .lbl { font-size: .8rem; color: var(--ink-3); }
+@media (max-width: 900px) { .band { grid-template-columns: 1fr; } .band .state { border-right: 0; border-bottom: 1px solid var(--rule); } }
+
+/* ---------- service lights ---------- */
+.lights { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .lights { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.light { background: var(--bg-2); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; display: flex; gap: 11px; align-items: flex-start; min-width: 0; }
+.light .lamp { width: 10px; height: 10px; margin-top: 5px; box-shadow: 0 0 0 3px var(--mint-wash), 0 0 10px rgba(87, 212, 157, .5); }
+.light .lamp.bad { box-shadow: 0 0 0 3px var(--coral-wash); }
+.light b { display: block; font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.light span { font-size: .78rem; color: var(--ink-3); }
+
+/* ---------- gauges ---------- */
+.gauges { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .gauges { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .gauges, .lights { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.gauge { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px 8px; min-width: 0; }
+.gauge .k { font-size: .8rem; color: var(--ink-2); display: flex; justify-content: space-between; gap: 6px; }
+.gauge .v { font-family: var(--display); font-size: 1.75rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 2px; }
+.gauge .v small { font-family: var(--body); font-size: .8rem; color: var(--ink-3); font-weight: 500; margin-left: 3px; }
+.gauge svg { display: block; width: 100%; height: 34px; margin-top: 4px; }
+.gauge.warn .v { color: var(--gold); } .gauge.bad .v { color: var(--coral); }
+
+/* ---------- charts ---------- */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .axis text { fill: var(--ink-3); font-size: 11px; font-family: var(--body); font-variant-numeric: tabular-nums; }
+.chart .gridline { stroke: var(--grid); }
+.chart .tip { position: absolute; pointer-events: none; background: #0A2531; border: 1px solid #245768; border-radius: 9px; padding: 7px 10px;
+  font-size: .8rem; white-space: nowrap; transform: translate(-50%, -100%); box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.chart .tip b { font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 16px; font-size: .8rem; color: var(--ink-2); flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.seg { display: inline-flex; background: var(--bg-2); border: 1px solid var(--rule); border-radius: 9px; padding: 2px; }
+.seg button { background: none; border: 0; padding: 4px 10px; border-radius: 7px; color: var(--ink-3); cursor: pointer; font-size: .8rem; font-weight: 600; }
+.seg button[aria-pressed='true'] { background: var(--surface-2); color: var(--ink); }
+
+/* ---------- today ---------- */
+.today { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+.ring { position: relative; width: 132px; height: 132px; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.ring .mid b { font-family: var(--display); font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ring .mid span { font-size: .72rem; color: var(--ink-3); }
+.figs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.fig .k { font-size: .78rem; color: var(--ink-3); }
+.fig .v { font-family: var(--display); font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fig .v.gold { color: var(--gold); }
+.figs-wide { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); }
+
+/* ---------- feed ---------- */
+.feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 420px; overflow: auto; }
+.feed li { display: grid; grid-template-columns: 58px 18px 1fr; gap: 8px; padding: 8px 2px; border-bottom: 1px solid rgba(23, 64, 79, .6); align-items: baseline; }
+.feed li:last-child { border-bottom: 0; }
+.feed .t { font-size: .78rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.feed .k { width: 8px; height: 8px; border-radius: 2px; transform: translateY(-1px); }
+.feed .k.receipt { background: var(--gold); } .feed .k.attendance { background: var(--mint); } .feed .k.notice { background: var(--sky); }
+.feed .k.homework { background: var(--lagoon); } .feed .k.error { background: var(--coral); border-radius: 50%; } .feed .k.panel { background: var(--ink-3); }
+.feed .x { font-size: .88rem; min-width: 0; }
+.feed .x span { display: block; font-size: .76rem; color: var(--ink-3); }
+.feed li.new { animation: arrive 1.2s ease-out; }
+@keyframes arrive { from { background: var(--sky-wash); } to { background: transparent; } }
+
+/* ---------- tables ---------- */
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { text-align: left; font-weight: 600; color: var(--ink-3); font-size: .78rem; padding: 0 10px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid rgba(23, 64, 79, .55); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th.num, td.num { text-align: right; }
+.scroll { max-height: 380px; overflow: auto; }
+.chip { display: inline-block; font-size: .74rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--sky-wash); color: var(--sky); white-space: nowrap; }
+.chip.ok { background: var(--mint-wash); color: var(--mint); } .chip.warn { background: var(--gold-wash); color: var(--gold); } .chip.bad { background: var(--coral-wash); color: var(--coral); }
+.bar { height: 6px; border-radius: 3px; background: var(--bg-2); overflow: hidden; min-width: 80px; }
+.bar > span { display: block; height: 100%; background: var(--sky); border-radius: 3px; }
+.bar.warn > span { background: var(--gold); } .bar.bad > span { background: var(--coral); }
+
+/* ---------- forms, buttons ---------- */
+.btn { border: 1px solid var(--rule); background: var(--surface-2); color: var(--ink); border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 600; font-size: .88rem; }
+.btn:hover { border-color: #2B6276; }
+.btn.primary { background: var(--sky); border-color: var(--sky); color: #052330; }
+.btn.primary:hover { background: #9BDDF2; }
+.btn.danger { color: var(--coral); }
+.btn:disabled { opacity: .5; cursor: default; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.f { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.f label { font-weight: 600; font-size: .86rem; color: var(--ink-2); }
+input, select { font: inherit; color: var(--ink); background: var(--bg-2); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; width: 100%; }
+input:focus, select:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 3px var(--sky-wash); }
+input[type=checkbox] { width: auto; accent-color: var(--sky); }
+.hint { font-size: .78rem; color: var(--ink-3); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.err { color: var(--coral); font-size: .9rem; min-height: 1.2em; }
+.page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.page-head p { color: var(--ink-2); margin: 4px 0 0; }
+
+/* ---------- login ---------- */
+.login { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.login .card { width: min(420px, 100%); padding: 30px; }
+.login h1 { font-size: 1.5rem; margin: 18px 0 4px; }
+.login .check { display: flex; gap: 10px; align-items: flex-start; font-size: .88rem; color: var(--ink-2); margin: 4px 0 16px; cursor: pointer; }
+.login .btn { width: 100%; padding: 11px; }
+
+/* ---------- side panel ---------- */
+.shade { position: fixed; inset: 0; background: rgba(2, 10, 14, .6); z-index: 30; }
+.panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100%); background: var(--bg-2); border-left: 1px solid var(--rule); z-index: 31; padding: 26px; overflow: auto; animation: slide .18s ease-out; }
+@keyframes slide { from { transform: translateX(24px); opacity: 0; } }
+.kv { display: grid; grid-template-columns: 130px 1fr; gap: 9px 14px; margin: 0; }
+.kv dt { color: var(--ink-3); font-size: .86rem; } .kv dd { margin: 0; }
+.pw { font-family: var(--mono); font-size: 1.3rem; background: var(--surface); padding: 6px 12px; border-radius: 8px; letter-spacing: .06em; color: var(--gold); }
+@media print { body { background: #fff; color: #000; } .top, .shade, .panel .row { display: none; } .panel { position: static; border: 0; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <header class="top hidden" id="top">
   <div class="brand">
-    <svg width="26" height="26" viewBox="0 0 100 100" aria-hidden="true"><g fill="#7FD3EE" stroke="#7FD3EE" stroke-width="7" stroke-linejoin="round"><path d="M10 89L41 12H59L90 89H74L50 33L26 89Z"/></g><path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F2A33A"/></svg>
-    Arscio <small>control panel</small>
+    <svg width="26" height="26" viewBox="0 0 100 100" aria-hidden="true"><path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" fill="#7FD3EE" stroke="#7FD3EE" stroke-width="7" stroke-linejoin="round"/><path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F2A33A"/></svg>
+    Arscio <span>Control</span>
   </div>
+  <span class="host" id="host"></span>
   <nav aria-label="Sections">
-    <button data-tab="health" aria-current="page">Health</button>
+    <button data-tab="dash" aria-current="page">Dashboard</button>
     <button data-tab="schools">Schools</button>
+    <button data-tab="server">Server</button>
     <button data-tab="activity">Activity</button>
   </nav>
-  <div class="who"><span id="checked"></span><button class="link" id="logout">Log out</button></div>
+  <div class="spacer"></div>
+  <span class="small faint" id="updated"><span class="pulse" id="pulse"></span>Live</span>
+  <div class="clock"><b id="clockIst">--:--</b><small id="clockUtc"></small></div>
+  <button class="tool" id="wallBtn" title="Full screen with larger text, for the office wall">Wall mode</button>
+  <button class="tool hide-wall" id="logout">Log out</button>
 </header>
 
-<main>
-  <section id="login" class="login hidden">
-    <div class="card">
-      <h1>Arscio control</h1>
-      <p class="sub">For the Arscio team only.</p>
-      <form id="loginForm">
-        <div class="f"><label for="pw">Control panel password</label><input id="pw" type="password" autocomplete="current-password" required autofocus></div>
-        <p class="err" id="loginErr" role="alert"></p>
-        <button class="btn primary">Log in</button>
-      </form>
-    </div>
-  </section>
+<section id="login" class="login hidden">
+  <div class="card">
+    <svg width="40" height="40" viewBox="0 0 100 100" aria-hidden="true"><path d="M10 89L41 12H59L90 89H74L50 33L26 89Z" fill="#7FD3EE" stroke="#7FD3EE" stroke-width="7" stroke-linejoin="round"/><path d="M41 80C41 66 49 58 61 57C61 71 53 79 41 80Z" fill="#F2A33A"/></svg>
+    <h1>Arscio control</h1>
+    <p class="muted small">For the Arscio team only.</p>
+    <form id="loginForm" style="margin-top:18px">
+      <div class="f"><label for="pw">Control panel password</label><input id="pw" type="password" autocomplete="current-password" required autofocus></div>
+      <label class="check"><input type="checkbox" id="remember"><span>Keep this screen logged in for 30 days<br><span class="faint tiny">Only on the office wall screen or your own computer.</span></span></label>
+      <p class="err" id="loginErr" role="alert"></p>
+      <button class="btn primary">Log in</button>
+    </form>
+  </div>
+</section>
 
-  <section id="health" class="hidden"></section>
+<main id="main" class="hidden">
+  <section id="dash"></section>
   <section id="schools" class="hidden"></section>
+  <section id="server" class="hidden"></section>
   <section id="activity" class="hidden"></section>
 </main>
 
@@ -121,17 +265,34 @@
 <aside class="panel hidden" id="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle"></aside>
 
 <script>
+// ============================================================ helpers
 const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const when = (iso) => {
-  if (!iso) return '-';
-  const d = new Date(iso), s = (Date.now() - d) / 1000;
-  const ago = s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : `${Math.round(s / 86400)} days ago`;
-  return `<span title="${esc(d.toLocaleString('en-IN'))}">${ago}</span>`;
+const IST = 'Asia/Kolkata';
+const nf = new Intl.NumberFormat('en-IN');
+const n = (v) => (v == null || Number.isNaN(v) ? '–' : nf.format(Math.round(v)));
+const inr = (v) => '₹' + nf.format(Math.round(v || 0));
+const bytes = (b) => b < 1048576 ? `${Math.round(b / 1024)} KB` : b < 1073741824 ? `${(b / 1048576).toFixed(1)} MB` : `${(b / 1073741824).toFixed(2)} GB`;
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+const ago = (iso) => {
+  if (!iso) return '–';
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 45) return 'just now';
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  return `${Math.round(s / 86400)} days ago`;
 };
-const dateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
+const span = (iso) => {
+  if (!iso) return '–';
+  const s = (Date.now() - new Date(iso)) / 1000;
+  if (s < 3600) return `${Math.max(1, Math.round(s / 60))} min`;
+  if (s < 86400) return `${Math.floor(s / 3600)} h ${Math.round((s % 3600) / 60)} min`;
+  return `${Math.floor(s / 86400)} d ${Math.floor((s % 86400) / 3600)} h`;
+};
+const clock = (t) => new Date(t).toLocaleTimeString('en-IN', { timeZone: IST, hour: '2-digit', minute: '2-digit', hour12: false });
+const dateTime = (iso) => iso ? new Date(iso).toLocaleString('en-IN', { timeZone: IST, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : '–';
 const phone = (p) => p ? String(p).replace(/^\+91(\d{5})(\d{5})$/, '$1 $2') : '';
-const mb = (b) => b < 1048576 ? `${Math.round(b / 1024)} KB` : `${(b / 1048576).toFixed(1)} MB`;
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { ...opts, headers: { 'content-type': 'application/json' }, credentials: 'same-origin' });
@@ -141,137 +302,411 @@ async function api(path, opts = {}) {
   return data;
 }
 
-// ---------------- navigation ----------------
-let tab = 'health', timer = null;
+// ============================================================ charts (plain SVG)
+const svgNS = 'http://www.w3.org/2000/svg';
+function linePath(pts) { return pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(''); }
+/** Segments, so gaps (missing readings) show as gaps rather than a fake line. */
+function segments(xs, ys) {
+  const out = []; let cur = [];
+  xs.forEach((x, i) => { if (ys[i] == null) { if (cur.length) out.push(cur); cur = []; } else cur.push([x, ys[i]]); });
+  if (cur.length) out.push(cur);
+  return out;
+}
+function spark(values, { color = 'var(--sky)', max = null, min = 0, h = 34, w = 200 } = {}) {
+  const v = values.filter((x) => x != null);
+  if (v.length < 2) return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><line x1="0" x2="${w}" y1="${h - 1}" y2="${h - 1}" stroke="var(--rule)"/></svg>`;
+  const hi = max ?? (Math.max(...v) * 1.15 || 1), lo = min;
+  const xs = values.map((_, i) => (i / (values.length - 1)) * w);
+  const ys = values.map((y) => (y == null ? null : h - 2 - ((y - lo) / (hi - lo || 1)) * (h - 4)));
+  const segs = segments(xs, ys);
+  const id = 'g' + Math.random().toString(36).slice(2, 8);
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+    ${segs.map((s) => `<path d="${linePath(s)}L${s[s.length - 1][0]},${h}L${s[0][0]},${h}Z" fill="url(#${id})"/><path d="${linePath(s)}" fill="none" stroke="${color}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`).join('')}
+  </svg>`;
+}
+
+/**
+ * A time chart with a fine grid (like graph paper), time ticks, and a crosshair readout.
+ * series: [{ name, color, values, kind: 'line'|'area'|'bars', axis: 'left'|'right', fmt }]
+ */
+function timeChart(el, times, series, { height = 230, leftFmt = n, rightFmt = n, leftMax = null } = {}) {
+  const W = Math.max(320, el.clientWidth || 800), H = height, L = 46, R = series.some((s) => s.axis === 'right') ? 46 : 14, T = 10, B = 24;
+  const iw = W - L - R, ih = H - T - B;
+  const vals = (axis) => series.filter((s) => (s.axis ?? 'left') === axis).flatMap((s) => s.values).filter((v) => v != null);
+  const niceMax = (m) => { if (!m) return 1; const p = 10 ** Math.floor(Math.log10(m)); return Math.ceil(m / p * 1.1) * p; };
+  const lmax = leftMax ?? niceMax(Math.max(0, ...vals('left'))), rmax = niceMax(Math.max(0, ...vals('right')));
+  const t0 = times[0] ?? 0, t1 = times[times.length - 1] ?? 1;
+  const x = (t) => L + ((t - t0) / (t1 - t0 || 1)) * iw;
+  const y = (v, axis) => T + ih - (v / ((axis === 'right' ? rmax : lmax) || 1)) * ih;
+  // time ticks
+  const span = t1 - t0, step = span <= 3.7e6 ? 10 * 60e3 : span <= 7e6 * 3.2 ? 3600e3 : span <= 90000e3 ? 3 * 3600e3 : 86400e3;
+  const ticks = []; for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) ticks.push(t);
+  const tfmt = (t) => step >= 86400e3 ? new Date(t).toLocaleDateString('en-IN', { timeZone: IST, day: 'numeric', month: 'short' }) : clock(t);
+  let g = '';
+  for (let i = 0; i <= 4; i++) { const yy = T + (ih / 4) * i; g += `<line class="gridline" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/>`; }
+  for (const t of ticks) g += `<line class="gridline" x1="${x(t)}" x2="${x(t)}" y1="${T}" y2="${T + ih}"/>`;
+  let axis = '<g class="axis">';
+  for (let i = 0; i <= 4; i++) {
+    const yy = T + (ih / 4) * i, lv = lmax * (1 - i / 4), rv = rmax * (1 - i / 4);
+    axis += `<text x="${L - 8}" y="${yy + 4}" text-anchor="end">${leftFmt(lv)}</text>`;
+    if (R > 20) axis += `<text x="${W - R + 8}" y="${yy + 4}">${rightFmt(rv)}</text>`;
+  }
+  for (const t of ticks) axis += `<text x="${x(t)}" y="${H - 6}" text-anchor="middle">${tfmt(t)}</text>`;
+  axis += '</g>';
+  let body = '';
+  const bw = Math.max(1.5, (iw / Math.max(1, times.length)) * 0.6);
+  series.forEach((s, si) => {
+    const ax = s.axis ?? 'left';
+    if (s.kind === 'bars') {
+      s.values.forEach((v, i) => { if (v) body += `<rect x="${x(times[i]) - bw / 2}" y="${y(v, ax)}" width="${bw}" height="${T + ih - y(v, ax)}" fill="${s.color}" rx="1"/>`; });
+      return;
+    }
+    const segs = segments(times.map(x), s.values.map((v) => (v == null ? null : y(v, ax))));
+    const id = `cg${si}${Math.random().toString(36).slice(2, 6)}`;
+    if (s.kind === 'area') body += `<defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${s.color}" stop-opacity=".30"/><stop offset="1" stop-color="${s.color}" stop-opacity="0"/></linearGradient></defs>`;
+    for (const sg of segs) {
+      if (s.kind === 'area') body += `<path d="${linePath(sg)}L${sg[sg.length - 1][0]},${T + ih}L${sg[0][0]},${T + ih}Z" fill="url(#${id})"/>`;
+      body += `<path d="${linePath(sg)}" fill="none" stroke="${s.color}" stroke-width="${s.width ?? 1.8}" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="4 4"' : ''}/>`;
+    }
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(series.map((s) => s.name).join(', '))} over time">${g}${axis}${body}
+    <line class="xh" x1="0" x2="0" y1="${T}" y2="${T + ih}" stroke="var(--ink-3)" stroke-dasharray="3 3" visibility="hidden"/></svg><div class="tip hidden"></div>`;
+  const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), xh = el.querySelector('.xh');
+  svg.addEventListener('mousemove', (e) => {
+    const r = svg.getBoundingClientRect(), px = ((e.clientX - r.left) / r.width) * W;
+    if (px < L || px > W - R || !times.length) return;
+    const t = t0 + ((px - L) / iw) * (t1 - t0);
+    let i = 0, best = Infinity; times.forEach((tt, k) => { const d = Math.abs(tt - t); if (d < best) { best = d; i = k; } });
+    xh.setAttribute('x1', x(times[i])); xh.setAttribute('x2', x(times[i])); xh.setAttribute('visibility', 'visible');
+    tip.innerHTML = `<div class="faint tiny">${dateTime(times[i])}</div>` + series.map((s) => `<div><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${s.color};margin-right:6px"></i>${esc(s.name)}: <b>${(s.fmt ?? n)(s.values[i])}</b></div>`).join('');
+    tip.classList.remove('hidden');
+    tip.style.left = `${(x(times[i]) / W) * 100}%`; tip.style.top = `${T + 6}px`;
+  });
+  svg.addEventListener('mouseleave', () => { tip.classList.add('hidden'); xh.setAttribute('visibility', 'hidden'); });
+}
+
+function ring(value, total, color = 'var(--mint)') {
+  const r = 52, c = 2 * Math.PI * r, p = total ? Math.min(1, value / total) : 0;
+  return `<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--bg-2)" stroke-width="10"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c * p} ${c}"/></svg>`;
+}
+
+// ============================================================ navigation, login, clock, wall mode
+let tab = 'dash';
+const timers = [];
+function stopTimers() { while (timers.length) clearInterval(timers.pop()); }
 function show(name) {
   tab = name;
-  for (const s of ['health', 'schools', 'activity']) $('#' + s).classList.toggle('hidden', s !== name);
-  document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === name ? 'page' : 'false'));
-  ({ health: loadHealth, schools: loadSchools, activity: loadActivity })[name]();
+  for (const s of ['dash', 'schools', 'server', 'activity']) $('#' + s).classList.toggle('hidden', s !== name);
+  $$('nav button').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === name ? 'page' : 'false'));
+  ({ dash: loadDash, schools: loadSchools, server: loadServer, activity: loadActivity })[name]();
 }
-document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab)));
+$$('nav button').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab)));
 function showLogin() {
-  clearInterval(timer);
-  $('#top').classList.add('hidden'); ['health', 'schools', 'activity'].forEach((s) => $('#' + s).classList.add('hidden'));
+  stopTimers();
+  $('#top').classList.add('hidden'); $('#main').classList.add('hidden');
   $('#login').classList.remove('hidden'); $('#pw').focus();
 }
 function showApp() {
-  $('#login').classList.add('hidden'); $('#top').classList.remove('hidden');
+  $('#login').classList.add('hidden'); $('#top').classList.remove('hidden'); $('#main').classList.remove('hidden');
   show(tab);
-  clearInterval(timer);
-  timer = setInterval(() => { if (tab === 'health' && !document.hidden) loadHealth(); }, 30000);
+  stopTimers();
+  // Live: the dashboard refreshes itself; other sections refresh when opened.
+  timers.push(setInterval(() => { if (tab === 'dash' && !document.hidden) refreshDash('fast'); }, 10000));
+  timers.push(setInterval(() => { if (tab === 'dash' && !document.hidden) refreshDash('slow'); }, 30000));
+  timers.push(setInterval(() => { if (tab === 'server' && !document.hidden) loadServer(); }, 60000));
 }
 $('#loginForm').addEventListener('submit', async (e) => {
   e.preventDefault(); $('#loginErr').textContent = '';
-  try { await api('/api/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) }); $('#pw').value = ''; showApp(); }
-  catch (err) { $('#loginErr').textContent = err.message; }
+  try {
+    await api('/api/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value, remember: $('#remember').checked }) });
+    $('#pw').value = ''; showApp();
+  } catch (err) { $('#loginErr').textContent = err.message; }
 });
 $('#logout').addEventListener('click', async () => { await api('/api/logout', { method: 'POST' }); showLogin(); });
 
-// ---------------- Health ----------------
-async function loadHealth() {
-  const el = $('#health');
-  let h, e;
-  try { [h, e] = await Promise.all([api('/api/health'), api('/api/errors')]); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
-  $('#checked').textContent = 'Checked ' + new Date(h.checkedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  const bad = h.warnings.filter((w) => w.level === 'bad').length;
-  const level = bad ? 'bad' : h.warnings.length ? 'warn' : 'ok';
-  const headline = level === 'ok' ? 'Everything is working.' : bad ? `${bad} serious problem${bad === 1 ? '' : 's'} need attention.` : `${h.warnings.length} thing${h.warnings.length === 1 ? '' : 's'} to keep an eye on.`;
-  const m = h.machine, memUsed = m.memory.totalMb ? Math.round((1 - m.memory.availableMb / m.memory.totalMb) * 100) : 0;
-  const barCls = (p) => p >= 90 ? 'bar hot' : p >= 75 ? 'bar mid' : 'bar';
-  const stateBadge = (s) => s === 'active' ? '<span class="pill good">Running</span>' : s === 'unknown' ? '<span class="pill">Unknown</span>' : `<span class="pill bad">${esc(s)}</span>`;
-  const lastB = h.backups.last;
-  el.innerHTML = `
-    <div class="status ${level}" role="status"><span class="dot"></span><div>
-      <strong>${headline}</strong>
-      ${h.warnings.length ? `<ul>${h.warnings.map((w) => `<li class="${w.level}">${esc(w.text)}</li>`).join('')}</ul>`
-        : `<span class="muted">Server answered in ${h.api.ms} ms. Website answered in ${h.web.ms} ms.</span>`}
-    </div></div>
-    <div class="grid">
-      <div class="card">
-        <h2>Services</h2>
-        <table><thead><tr><th>Service</th><th>State</th><th>Running since</th><th>Restarts</th></tr></thead><tbody>
-        ${h.services.map((s) => `<tr><td>${esc(s.label)}<div class="small muted mono">${esc(s.unit)}${s.memoryMb != null ? ` · ${s.memoryMb} MB` : ''}</div></td>
-          <td>${stateBadge(s.state)}</td><td class="small">${s.state === 'active' ? when(s.since) : '-'}</td>
-          <td class="num">${s.restarts ?? '-'}</td></tr>`).join('')}
-        </tbody></table>
+function tick() {
+  const now = Date.now();
+  $('#clockIst').textContent = new Date(now).toLocaleTimeString('en-IN', { timeZone: IST, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  $('#clockUtc').textContent = `${new Date(now).toLocaleDateString('en-IN', { timeZone: IST, weekday: 'short', day: 'numeric', month: 'short' })} · IST · ${new Date(now).toISOString().slice(11, 16)} UTC`;
+}
+setInterval(tick, 1000); tick();
+
+function setWall(on) {
+  document.body.classList.toggle('wall', on);
+  $('#wallBtn').textContent = on ? 'Exit wall mode' : 'Wall mode';
+  const u = new URL(location.href); on ? u.searchParams.set('wall', '1') : u.searchParams.delete('wall'); history.replaceState(null, '', u);
+  if (on) document.documentElement.requestFullscreen?.().catch(() => {});
+  else if (document.fullscreenElement) document.exitFullscreen?.();
+  tab = 'dash'; show('dash');
+}
+$('#wallBtn').addEventListener('click', () => setWall(!document.body.classList.contains('wall')));
+if (new URLSearchParams(location.search).get('wall') === '1') document.body.classList.add('wall');
+window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => tab === 'dash' && drawCharts(), 150); });
+
+// ============================================================ Dashboard
+const D = { health: null, overview: null, series: null, live: null, feed: null, schools: null, range: '24h', seenFeed: new Set() };
+
+function loadDash() {
+  $('#dash').innerHTML = `
+    <div class="grid dash">
+      <div class="card band c12">
+        <div class="state" id="dState"><div class="line"><span class="lamp off"></span><h1>Checking…</h1></div></div>
+        <div class="scope">
+          <div class="read"><b id="dApiMs">–</b> <span>ms</span><div class="faint tiny">Server answer time, now</div></div>
+          <div class="lbl">Server heartbeat · last hour, every 10 seconds</div>
+          <div class="chart" id="cScope"></div>
+        </div>
       </div>
-      <div class="card">
-        <h2>Server</h2>
-        <dl class="kv">
-          <dt>Server up since</dt><dd>${when(m.upSince)}</dd>
-          <dt>Memory</dt><dd><div class="${barCls(memUsed)}"><span style="width:${memUsed}%"></span></div><span class="small">${memUsed}% used · ${m.memory.availableMb} MB free of ${m.memory.totalMb} MB${m.swap.totalMb ? ` · swap ${m.swap.usedMb}/${m.swap.totalMb} MB` : ''}</span></dd>
-          <dt>Disk</dt><dd><div class="${barCls(m.disk.usedPct)}"><span style="width:${m.disk.usedPct}%"></span></div><span class="small">${m.disk.usedPct}% used · ${m.disk.freeGb} GB free of ${m.disk.totalGb} GB</span></dd>
-          <dt>Database</dt><dd>${esc(h.database.size)}</dd>
-          <dt>Busy-ness</dt><dd class="small">${m.load.join(' / ')} <span class="muted">(1, 5, 15 min; ${m.cpus} processor${m.cpus === 1 ? '' : 's'})</span></dd>
-        </dl>
+      <div class="c12 lights" id="dLights"></div>
+      <div class="c12 gauges" id="dGauges"></div>
+      <div class="card c8">
+        <div class="card-head"><h2>Traffic</h2>
+          <div class="row"><div class="legend"><span><i style="background:var(--sky)"></i>Requests a minute</span><span><i style="background:var(--gold)"></i>Slowest 5% (ms)</span><span><i style="background:var(--coral)"></i>Server errors</span></div>
+          <div class="seg" id="dRange">${['1h', '6h', '24h', '7d'].map((r) => `<button data-r="${r}" aria-pressed="${r === D.range}">${r}</button>`).join('')}</div></div>
+        </div>
+        <div class="chart" id="cTraffic"></div>
       </div>
-      <div class="card">
-        <h2>Backups</h2>
-        ${!h.backups.found ? `<p class="muted">The backup folder <span class="mono">${esc(h.backups.folder)}</span> doesn't exist yet. It is made by the first daily backup.</p>` : `
-        <dl class="kv">
-          <dt>Last backup</dt><dd>${lastB ? `${lastB.ok ? '<span class="pill good">Worked</span>' : '<span class="pill bad">Failed</span>'} ${when(lastB.at)}${lastB.error ? `<div class="small" style="color:var(--bad)">${esc(lastB.error)}</div>` : ''}` : '-'}</dd>
-          <dt>Kept</dt><dd>${h.backups.files.length} file${h.backups.files.length === 1 ? '' : 's'} in <span class="mono small">${esc(h.backups.folder)}</span></dd>
-        </dl>
-        <div class="scroll" style="max-height:160px;margin-top:10px"><table><tbody>${h.backups.files.slice(0, 8).map((f) => `<tr><td class="mono">${esc(f.name)}</td><td class="num small">${f.sizeMb} MB</td><td class="small">${dateTime(f.at)}</td></tr>`).join('')}</tbody></table></div>`}
+      <div class="card c4" id="dToday"></div>
+      <div class="card c8" id="dMachineCard">
+        <div class="card-head"><h2>Machine</h2><div class="legend"><span><i style="background:var(--lagoon)"></i>Processor %</span><span><i style="background:var(--sky)"></i>Memory used %</span><span><i style="background:var(--gold)"></i>Database connections</span></div></div>
+        <div class="chart" id="cMachine"></div>
       </div>
-      <div class="card">
-        <h2>Background jobs</h2>
-        ${h.jobs.length ? `<table><thead><tr><th>Job</th><th>Last run</th><th>Result</th></tr></thead><tbody>
-          ${h.jobs.map((j) => `<tr><td>${esc(j.name)}</td><td class="small">${when(j.last_run_at)}</td><td>${j.last_error ? `<span class="pill bad">Failed</span><div class="small">${esc(j.last_error)}</div>` : '<span class="pill good">OK</span>'}</td></tr>`).join('')}
-        </tbody></table>` : '<p class="muted">No job has reported yet.</p>'}
-        <p class="small muted" style="margin-bottom:0">${h.queuedNotifications ? `${h.queuedNotifications} phone notifications waiting more than 5 minutes.` : 'No phone notifications are stuck.'}</p>
+      <div class="card c4" id="dLiveCard"><div class="card-head"><h2>Live</h2><span class="meta">Across all schools</span></div><ul class="feed" id="dFeed"></ul></div>
+      <div class="card c8" id="dSchools"></div>
+      <div class="card c4" id="dOps"></div>
+    </div>`;
+  $$('#dRange button').forEach((b) => b.addEventListener('click', async () => {
+    D.range = b.dataset.r; $$('#dRange button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    D.series = await api(`/api/series?range=${D.range}`).catch(() => D.series); drawCharts();
+  }));
+  refreshDash('slow');
+}
+
+async function refreshDash(speed) {
+  $('#pulse').classList.add('busy');
+  const want = [api('/api/health'), api('/api/overview'), api('/api/series?range=1h'), api('/api/feed')];
+  if (speed === 'slow') { want.push(api(`/api/series?range=${D.range}`)); want.push(api('/api/schools')); }
+  const r = await Promise.allSettled(want);
+  const val = (i) => (r[i]?.status === 'fulfilled' ? r[i].value : null);
+  D.health = val(0) ?? D.health; D.overview = val(1) ?? D.overview; D.live = val(2) ?? D.live; D.feed = val(3) ?? D.feed;
+  if (speed === 'slow') { D.series = val(4) ?? D.series; D.schools = val(5) ?? D.schools; }
+  else if (D.range === '1h') D.series = D.live;
+  $('#pulse').classList.remove('busy');
+  $('#pulse').style.background = r.every((x) => x.status === 'fulfilled') ? 'var(--mint)' : 'var(--coral)';
+  if (tab !== 'dash' || !$('#dState')) return;
+  drawDash();
+}
+
+function drawDash() {
+  const h = D.health, o = D.overview, live = D.live;
+  if (h) {
+    $('#host').textContent = `${h.machine.hostname} · ${h.machine.cpus} CPU · ${Math.round(h.machine.memory.totalMb / 1024 * 10) / 10} GB`;
+    const bad = h.warnings.filter((w) => w.level === 'bad').length;
+    const level = bad ? 'bad' : h.warnings.length ? 'warn' : 'ok';
+    const head = level === 'ok' ? 'All systems normal' : bad ? `${bad} serious problem${bad === 1 ? '' : 's'}` : `${h.warnings.length} thing${h.warnings.length === 1 ? '' : 's'} to watch`;
+    $('#dState').innerHTML = `<div class="line"><span class="lamp ${level === 'ok' ? '' : level}"></span><h1>${head}</h1></div>
+      ${h.warnings.length ? `<ul class="warnings">${h.warnings.slice(0, 5).map((w) => `<li class="${w.level}">${esc(w.text)}</li>`).join('')}</ul>`
+        : `<p class="muted small" style="margin:0">Server up ${span(h.machine.upSince)} · website answers in ${h.web.ms} ms · ${h.services.filter((s) => s.state === 'active').length} of ${h.services.length} services running</p>`}`;
+    $('#dLights').innerHTML = h.services.map((s) => {
+      const st = s.state === 'active' ? '' : s.state === 'unknown' ? 'off' : 'bad';
+      const short = { 'arscio-api': 'Arscio server', 'arscio-web': 'Office website', 'arscio-control': 'Control panel', 'postgresql@16-main': 'Database', caddy: 'Web gateway', 'curavo-cloud': 'Curavo' }[s.unit] ?? s.label;
+      return `<div class="light" title="${esc(s.label)}"><span class="lamp ${st}"></span><div style="min-width:0"><b>${esc(short)}</b>
+        <span>${s.state === 'active' ? `up ${span(s.since)}` : esc(s.state)}${s.memoryMb != null ? ` · ${s.memoryMb} MB` : ''}${s.restarts ? ` · ${s.restarts} restarts` : ''}</span></div></div>`;
+    }).join('');
+  }
+  const lm = live?.machine ?? [];
+  const lastMs = [...lm].reverse().find((p) => p.apiMs != null)?.apiMs ?? h?.api.ms;
+  $('#dApiMs').textContent = lastMs ?? '–';
+  if (h) {
+    const m = h.machine, memPct = pct(m.memory.totalMb - m.memory.availableMb, m.memory.totalMb);
+    const lastCpu = [...lm].reverse().find((p) => p.cpu != null)?.cpu;
+    const tr = live?.traffic ?? [];
+    // The current minute is still filling up, so use the last three finished minutes.
+    const done = tr.slice(-4, -1);
+    const rpmNow = done.length ? done.reduce((a, p) => a + p.rpm, 0) / done.length : 0;
+    const lv = (v, w, b) => (v >= b ? 'bad' : v >= w ? 'warn' : '');
+    const g = (k, v, unit, cls, sparkVals, opts, note = '') => `<div class="gauge ${cls}"><div class="k"><span>${k}</span><span class="faint">${note}</span></div>
+      <div class="v">${v}<small>${unit}</small></div>${spark(sparkVals, opts)}</div>`;
+    $('#dGauges').innerHTML =
+      g('Processor', lastCpu == null ? '–' : Math.round(lastCpu), '%', lv(lastCpu ?? 0, 70, 90), lm.map((p) => p.cpu), { color: 'var(--lagoon)', max: 100 }, `${m.cpus} cores`) +
+      g('Memory', memPct, '%', lv(memPct, 80, 92), lm.map((p) => (p.memTotal ? (p.mem / p.memTotal) * 100 : null)), { color: 'var(--sky)', max: 100 }, `${n(m.memory.availableMb)} MB free`) +
+      `<div class="gauge ${lv(m.disk.usedPct, 80, 90)}"><div class="k"><span>Disk</span><span class="faint">${m.disk.freeGb} GB free</span></div><div class="v">${m.disk.usedPct}<small>%</small></div><div class="bar ${lv(m.disk.usedPct, 80, 90)}" style="margin:16px 0 10px"><span style="width:${m.disk.usedPct}%"></span></div></div>` +
+      g('Requests', rpmNow < 10 ? rpmNow.toFixed(1) : n(rpmNow), '/min', '', tr.map((p) => p.rpm), { color: 'var(--sky)' }, `${n(o?.requests24h ?? 0)} in 24 h`) +
+      g('Slowest 5%', o?.p95Hour ?? '–', 'ms', lv(o?.p95Hour ?? 0, 800, 2000), tr.map((p) => p.p95), { color: 'var(--gold)' }, 'last hour') +
+      g('Errors', h.errors.last24h, '24 h', h.errors.lastHour ? 'bad' : h.errors.last24h ? 'warn' : '', tr.map((p) => p.err5), { color: 'var(--coral)' }, `${h.errors.lastHour} last hour`);
+  }
+  if (o) {
+    $('#dToday').innerHTML = `<div class="card-head"><h2>Schools today</h2><span class="meta">${new Date().toLocaleDateString('en-IN', { timeZone: IST, weekday: 'long', day: 'numeric', month: 'long' })}</span></div>
+      <div class="today">
+        <div class="ring">${ring(o.sectionsTaken, o.sectionsTotal)}<div class="mid"><b>${pct(o.sectionsTaken, o.sectionsTotal)}%</b><span>attendance<br>taken</span></div></div>
+        <div class="figs">
+          <div class="fig"><div class="k">Classes marked</div><div class="v">${n(o.sectionsTaken)} <span class="faint small">of ${n(o.sectionsTotal)}</span></div></div>
+          <div class="fig"><div class="k">Fees collected</div><div class="v gold">${inr(o.collectedToday)}</div></div>
+          <div class="fig"><div class="k">Receipts</div><div class="v">${n(o.receiptsToday)}</div></div>
+          <div class="fig"><div class="k">Messages sent</div><div class="v">${n(o.messagesToday)}</div></div>
+        </div>
       </div>
-      <div class="card wide">
-        <div class="row between"><h2>Crashes <span class="muted small">(last 30 days)</span></h2></div>
-        ${h.crashes.length ? `<div class="scroll"><table><thead><tr><th>When</th><th>Service</th><th>What happened</th></tr></thead><tbody>
-          ${h.crashes.map((c) => `<tr><td class="small nowrap">${dateTime(c.at)}</td><td class="small">${esc(c.unit)}</td><td class="mono">${esc(c.text)}</td></tr>`).join('')}</tbody></table></div>`
-          : '<p class="muted">No crashes. (If the server has just been set up, this fills in over time.)</p>'}
+      <div class="figs-wide">
+        <div class="fig"><div class="k">Using now</div><div class="v">${n(o.peopleNow)}</div></div>
+        <div class="fig"><div class="k">Today</div><div class="v">${n(o.peopleToday)}</div></div>
+        <div class="fig"><div class="k">Schools</div><div class="v">${n(o.schoolsActive)}${o.schoolsPaused ? ` <span class="faint small">+${o.schoolsPaused} paused</span>` : ''}</div></div>
+        <div class="fig"><div class="k">Students</div><div class="v">${n(o.students)}</div></div>
       </div>
-      <div class="card wide">
-        <h2>Errors <span class="muted small">(${h.errors.last24h} in the last 24 hours)</span></h2>
-        ${e.errors.length ? `<div class="scroll"><table><thead><tr><th>When</th><th>Page</th><th>School</th><th>Message</th></tr></thead><tbody>
-          ${e.errors.map((x) => `<tr><td class="small">${dateTime(x.at)}</td><td class="mono">${esc(x.method)} ${esc(x.route)}</td><td class="small">${esc(x.school ?? '-')}</td><td class="mono">${esc(x.message)}</td></tr>`).join('')}</tbody></table></div>`
-          : '<p class="muted">No server errors recorded.</p>'}
-        ${e.logLines.length ? `<details style="margin-top:12px"><summary class="small">Error lines from the service logs (${e.logLines.length})</summary>
-          <div class="scroll"><table><tbody>${e.logLines.map((l) => `<tr><td class="small">${dateTime(l.at)}</td><td class="mono">${esc(l.text)}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
-      </div>
+      <div class="small muted" style="margin-top:12px">${n(o.familiesIn)} of ${n(o.families)} families have logged in (${pct(o.familiesIn, o.families)}%) · ${n(o.staff)} staff · database ${bytes(o.dbBytes)}${o.queued ? ` · <span style="color:var(--gold)">${o.queued} messages waiting</span>` : ''}</div>`;
+  }
+  drawFeed(); drawSchoolsMini(); drawOps(); drawCharts();
+}
+
+const wallOn = () => document.body.classList.contains('wall');
+function drawCharts() {
+  const lm = D.live?.machine ?? [];
+  const sc = $('#cScope');
+  if (sc) timeChart(sc, lm.map((p) => p.t), [{ name: 'Answer time', color: 'var(--sky)', values: lm.map((p) => p.apiMs), kind: 'area', width: 2, fmt: (v) => (v == null ? 'no answer' : `${v} ms`) }],
+    { height: wallOn() ? 96 : 120, leftFmt: (v) => `${Math.round(v)}` });
+  const s = D.series;
+  if (!s) return;
+  const tc = $('#cTraffic');
+  if (tc) timeChart(tc, s.traffic.map((p) => Number(p.t)), [
+    { name: 'Requests a minute', color: 'var(--sky)', values: s.traffic.map((p) => p.rpm), kind: 'area', fmt: (v) => (v < 10 ? (v ?? 0).toFixed(1) : n(v)) },
+    { name: 'Server errors', color: 'var(--coral)', values: s.traffic.map((p) => p.err5), kind: 'bars' },
+    { name: 'Slowest 5%', color: 'var(--gold)', values: s.traffic.map((p) => p.p95), axis: 'right', width: 1.4, fmt: (v) => (v == null ? '–' : `${v} ms`) },
+  ], { height: wallOn() ? 205 : 250, rightFmt: (v) => `${Math.round(v)}ms` });
+  const mc = $('#cMachine');
+  const mm = (D.range === '1h' ? D.live?.machine : s.machine) ?? [];
+  if (mc) timeChart(mc, mm.map((p) => Number(p.t)), [
+    { name: 'Processor', color: 'var(--lagoon)', values: mm.map((p) => p.cpu), fmt: (v) => (v == null ? '–' : `${Math.round(v)}%`) },
+    { name: 'Memory used', color: 'var(--sky)', values: mm.map((p) => (p.memTotal ? (p.mem / p.memTotal) * 100 : null)), kind: 'area', fmt: (v) => (v == null ? '–' : `${Math.round(v)}%`) },
+    { name: 'Database connections', color: 'var(--gold)', values: mm.map((p) => p.db), axis: 'right', dash: true, width: 1.3 },
+  ], { height: wallOn() ? 165 : 210, leftMax: 100, leftFmt: (v) => `${Math.round(v)}%` });
+}
+
+function drawFeed() {
+  const el = $('#dFeed'); if (!el || !D.feed) return;
+  const first = D.seenFeed.size === 0;
+  const rows = D.feed.events.slice(0, 30);
+  if (!rows.length) { el.innerHTML = '<li><span></span><span></span><span class="muted small">Nothing yet today. Receipts, attendance, notices and errors appear here as they happen.</span></li>'; return; }
+  el.innerHTML = rows.map((e) => {
+    const key = `${e.at}|${e.kind}|${e.text}`; const isNew = !first && !D.seenFeed.has(key); D.seenFeed.add(key);
+    const label = { school_created: 'School onboarded', school_paused: 'School paused', school_resumed: 'School resumed', owner_password_reset: 'Owner password reset' }[e.text] ?? e.text;
+    return `<li class="${isNew ? 'new' : ''}"><span class="t">${(Date.now() - new Date(e.at)) < 86400e3 ? clock(e.at) : new Date(e.at).toLocaleDateString('en-IN', { timeZone: IST, day: 'numeric', month: 'short' })}</span>
+      <span class="k ${esc(e.kind)}" title="${esc(e.kind)}"></span><span class="x">${esc(label)}<span>${esc(e.school ?? '')}</span></span></li>`;
+  }).join('');
+}
+
+function drawSchoolsMini() {
+  const el = $('#dSchools'); if (!el || !D.schools) return;
+  const s = D.schools.schools;
+  el.innerHTML = `<div class="card-head"><h2>Schools</h2><button class="btn hide-wall" onclick="show('schools')" ${document.body.classList.contains('wall') ? 'hidden' : ''}>Manage</button></div>
+    ${s.length ? `<div class="scroll" style="max-height:none"><table><thead><tr><th>School</th><th class="num">Students</th><th class="num">Staff</th><th>Families logged in</th><th>Last used</th><th>Files</th></tr></thead><tbody>
+    ${s.map((x) => { const p = pct(x.familiesLoggedIn, x.families); return `<tr>
+      <td><b>${esc(x.name)}</b> ${x.status === 'active' ? '' : '<span class="chip bad">Paused</span>'}<div class="tiny faint">${esc(x.code)} · ${esc(x.board)}</div></td>
+      <td class="num">${n(x.students)}</td><td class="num">${n(x.staff)}</td>
+      <td><div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar ${p < 30 ? 'warn' : ''}" style="flex:1"><span style="width:${p}%"></span></div><span class="small tnum">${p}%</span></div></td>
+      <td class="small">${ago(x.lastActive)}</td><td class="small tnum">${bytes(Number(x.storageBytes))}</td></tr>`; }).join('')}
+    </tbody></table></div>` : '<p class="muted">No schools yet. Onboard the first one from Schools.</p>'}`;
+}
+
+function drawOps() {
+  const el = $('#dOps'); const h = D.health; if (!el || !h) return;
+  const b = h.backups, last = b.last;
+  const files = b.files.slice(0, 14).reverse();
+  const maxMb = Math.max(1, ...files.map((f) => f.sizeMb));
+  el.innerHTML = `<div class="card-head"><h2>Backups and jobs</h2><span class="meta">${b.found ? `${b.files.length} kept` : 'none yet'}</span></div>
+    <div class="row between" style="align-items:flex-start">
+      <div><div class="tiny faint">Last backup</div><div style="font-family:var(--display);font-size:1.2rem;font-weight:600">${last ? ago(last.at) : b.files[0] ? ago(b.files[0].at) : 'never'}</div>
+        ${last ? `<span class="chip ${last.ok ? 'ok' : 'bad'}">${last.ok ? 'worked' : 'failed'}</span> ${last.sizeMb ? `<span class="small faint">${last.sizeMb} MB</span>` : ''}` : ''}</div>
+      <svg width="140" height="44" viewBox="0 0 140 44" aria-label="Backup sizes, last ${files.length} days">${files.map((f, i) => { const hh = Math.max(2, (f.sizeMb / maxMb) * 40); return `<rect x="${i * 10}" y="${44 - hh}" width="7" height="${hh}" rx="1.5" fill="var(--lagoon)" opacity="${0.45 + 0.55 * (i / Math.max(1, files.length - 1))}"><title>${esc(f.name)} · ${f.sizeMb} MB</title></rect>`; }).join('')}</svg>
+    </div>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;font-size:.9rem">
+      ${h.jobs.length ? h.jobs.map((j) => { const stale = Date.now() - new Date(j.last_run_at) > (j.job === 'push' ? 5 * 60e3 : 45 * 60e3);
+        return `<div class="row between"><span class="row" style="gap:8px"><span class="lamp ${j.last_error ? 'bad' : stale ? 'warn' : ''}" style="width:8px;height:8px;box-shadow:none"></span>${esc(j.name)}</span><span class="small faint">${ago(j.last_run_at)}</span></div>`; }).join('')
+        : '<p class="small muted" style="margin:0">No background job has reported yet.</p>'}
+      <div class="row between"><span class="row" style="gap:8px"><span class="lamp ${h.queuedNotifications ? 'warn' : ''}" style="width:8px;height:8px;box-shadow:none"></span>Phone messages queue</span><span class="small faint">${h.queuedNotifications ? `${h.queuedNotifications} stuck` : 'clear'}</span></div>
+      <div class="row between"><span class="row" style="gap:8px"><span class="lamp" style="width:8px;height:8px;box-shadow:none"></span>Database</span><span class="small faint">${esc(h.database.size)}</span></div>
     </div>`;
 }
 
-// ---------------- Schools ----------------
+// ============================================================ Server (details)
+async function loadServer() {
+  const el = $('#server');
+  let h, e;
+  try { [h, e] = await Promise.all([api('/api/health'), api('/api/errors')]); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
+  const m = h.machine, memUsed = pct(m.memory.totalMb - m.memory.availableMb, m.memory.totalMb);
+  const barCls = (p) => (p >= 90 ? 'bar bad' : p >= 75 ? 'bar warn' : 'bar');
+  const stateChip = (s) => (s === 'active' ? '<span class="chip ok">Running</span>' : s === 'unknown' ? '<span class="chip">Unknown</span>' : `<span class="chip bad">${esc(s)}</span>`);
+  el.innerHTML = `
+    <div class="page-head"><div><h1>Server</h1><p>${esc(m.hostname)} · up ${span(m.upSince)} · checked ${clock(h.checkedAt)}</p></div></div>
+    <div class="grid dash">
+      <div class="card c7"><div class="card-head"><h2>Services</h2></div>
+        <table><thead><tr><th>Service</th><th>State</th><th>Running for</th><th class="num">Memory</th><th class="num">Restarts</th></tr></thead><tbody>
+        ${h.services.map((s) => `<tr><td>${esc(s.label)}<div class="tiny faint mono">${esc(s.unit)}</div></td><td>${stateChip(s.state)}</td>
+          <td class="small">${s.state === 'active' ? span(s.since) : '–'}</td><td class="num small">${s.memoryMb != null ? `${s.memoryMb} MB` : '–'}</td><td class="num">${s.restarts ?? '–'}</td></tr>`).join('')}
+        </tbody></table></div>
+      <div class="card c5"><div class="card-head"><h2>Machine</h2></div>
+        <dl class="kv">
+          <dt>Memory</dt><dd><div class="${barCls(memUsed)}"><span style="width:${memUsed}%"></span></div><span class="small muted">${memUsed}% used · ${n(m.memory.availableMb)} MB free of ${n(m.memory.totalMb)} MB${m.swap.totalMb ? ` · swap ${m.swap.usedMb} of ${m.swap.totalMb} MB` : ''}</span></dd>
+          <dt>Disk</dt><dd><div class="${barCls(m.disk.usedPct)}"><span style="width:${m.disk.usedPct}%"></span></div><span class="small muted">${m.disk.usedPct}% used · ${m.disk.freeGb} GB free of ${m.disk.totalGb} GB</span></dd>
+          <dt>Database</dt><dd>${esc(h.database.size)}</dd>
+          <dt>Load</dt><dd class="small">${m.load.join(' · ')} <span class="faint">(1, 5, 15 min; ${m.cpus} cores)</span></dd>
+          <dt>Answer time</dt><dd class="small">server ${h.api.ms} ms · website ${h.web.ms} ms</dd>
+        </dl></div>
+      <div class="card c6"><div class="card-head"><h2>Backups</h2><span class="meta mono">${esc(h.backups.folder)}</span></div>
+        ${!h.backups.found ? '<p class="muted">The backup folder is made by the first nightly backup.</p>' : `
+        <div class="scroll"><table><thead><tr><th>File</th><th class="num">Size</th><th>Made</th></tr></thead><tbody>${h.backups.files.map((f) => `<tr><td class="mono">${esc(f.name)}</td><td class="num small">${f.sizeMb} MB</td><td class="small">${dateTime(f.at)}</td></tr>`).join('')}</tbody></table></div>`}
+        ${h.backups.last?.error ? `<p class="err">${esc(h.backups.last.error)}</p>` : ''}</div>
+      <div class="card c6"><div class="card-head"><h2>Background jobs</h2></div>
+        ${h.jobs.length ? `<table><thead><tr><th>Job</th><th>Last run</th><th>Last worked</th><th>Result</th></tr></thead><tbody>
+          ${h.jobs.map((j) => `<tr><td>${esc(j.name)}</td><td class="small">${ago(j.last_run_at)}</td><td class="small">${ago(j.last_ok_at)}</td><td>${j.last_error ? `<span class="chip bad">Failed</span><div class="small">${esc(j.last_error)}</div>` : '<span class="chip ok">OK</span>'}</td></tr>`).join('')}
+        </tbody></table>` : '<p class="muted">No job has reported yet.</p>'}
+        <p class="small muted" style="margin:10px 0 0">${h.queuedNotifications ? `${h.queuedNotifications} phone messages waiting more than 5 minutes.` : 'No phone messages are stuck.'}</p></div>
+      <div class="card c12"><div class="card-head"><h2>Server errors</h2><span class="meta">${h.errors.last24h} in 24 hours · ${h.errors.lastHour} in the last hour</span></div>
+        ${e.errors.length ? `<div class="scroll"><table><thead><tr><th>When</th><th>Page</th><th>School</th><th>Message</th></tr></thead><tbody>
+          ${e.errors.map((x) => `<tr><td class="small" style="white-space:nowrap">${dateTime(x.at)}</td><td class="mono">${esc(x.method)} ${esc(x.route)}</td><td class="small">${esc(x.school ?? '–')}</td><td class="mono">${esc(x.message)}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="muted" style="margin:0">No server errors recorded.</p>'}</div>
+      <div class="card c6"><div class="card-head"><h2>Crashes</h2><span class="meta">last 30 days</span></div>
+        ${h.crashes.length ? `<div class="scroll"><table><tbody>${h.crashes.map((c) => `<tr><td class="small" style="white-space:nowrap">${dateTime(c.at)}</td><td class="small">${esc(c.unit)}</td><td class="mono">${esc(c.text)}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="muted" style="margin:0">No crashes.</p>'}</div>
+      <div class="card c6"><div class="card-head"><h2>Log lines</h2><span class="meta">errors printed by the services, 7 days</span></div>
+        ${e.logLines.length ? `<div class="scroll"><table><tbody>${e.logLines.map((l) => `<tr><td class="small" style="white-space:nowrap">${dateTime(l.at)}</td><td class="mono">${esc(l.text)}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="muted" style="margin:0">Nothing logged.</p>'}</div>
+    </div>`;
+}
+
+// ============================================================ Schools
 let schoolsData = null;
 async function loadSchools() {
   const el = $('#schools');
   try { schoolsData = await api('/api/schools'); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
   const s = schoolsData.schools;
   el.innerHTML = `
-    <div class="row between" style="margin-bottom:18px">
-      <div><h1>Schools</h1><p class="sub" style="margin:0">${s.length} school${s.length === 1 ? '' : 's'} on Arscio. Logins are ${schoolsData.loginMode === 'password' ? 'by password (no SMS)' : 'by SMS code'}.</p></div>
+    <div class="page-head">
+      <div><h1>Schools</h1><p>${s.length} school${s.length === 1 ? '' : 's'} on Arscio. Logins are ${schoolsData.loginMode === 'password' ? 'by password (no SMS)' : 'by SMS code'}.</p></div>
       <button class="btn primary" id="newSchool">Onboard a school</button>
     </div>
-    ${s.length ? `<div class="card"><table><thead><tr><th>School</th><th>Owner</th><th class="num">Students</th><th class="num">Staff</th><th>Families logged in</th><th>Last used</th><th>Files</th><th></th></tr></thead><tbody>
+    ${s.length ? `<div class="card"><table><thead><tr><th>School</th><th>Owner</th><th class="num">Students</th><th class="num">Staff</th><th>Families logged in</th><th>Last used</th><th class="num">Files</th><th></th></tr></thead><tbody>
       ${s.map((x) => `<tr>
-        <td><strong>${esc(x.name)}</strong> ${x.status === 'active' ? '' : '<span class="pill bad">Paused</span>'}<div class="small muted">${esc(x.code)} · ${esc(x.board)} · since ${new Date(x.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></td>
-        <td>${esc(x.ownerName ?? '-')}<div class="small muted">${esc(x.ownerEmail ?? '')} ${esc(phone(x.ownerPhone))}</div>${x.ownerLoggedIn ? '' : '<span class="pill warn">Not logged in yet</span>'}</td>
-        <td class="num">${x.students}</td><td class="num">${x.staff}</td>
-        <td class="small">${x.families ? `${x.familiesLoggedIn} of ${x.families}` : '-'}</td>
-        <td class="small">${when(x.lastActive)}</td>
-        <td class="small num">${mb(Number(x.storageBytes))}</td>
-        <td><div class="row" style="justify-content:flex-end">
+        <td><b>${esc(x.name)}</b> ${x.status === 'active' ? '' : '<span class="chip bad">Paused</span>'}<div class="tiny faint">${esc(x.code)} · ${esc(x.board)} · since ${new Date(x.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></td>
+        <td>${esc(x.ownerName ?? '–')}<div class="tiny faint">${esc(x.ownerEmail ?? '')} ${esc(phone(x.ownerPhone))}</div>${x.ownerLoggedIn ? '' : '<span class="chip warn">Not logged in yet</span>'}</td>
+        <td class="num">${n(x.students)}</td><td class="num">${n(x.staff)}</td>
+        <td class="small">${x.families ? `${n(x.familiesLoggedIn)} of ${n(x.families)}` : '–'}</td>
+        <td class="small">${ago(x.lastActive)}</td>
+        <td class="small num">${bytes(Number(x.storageBytes))}</td>
+        <td><div class="row" style="justify-content:flex-end;flex-wrap:nowrap">
           <button class="btn" data-pw="${x.id}" data-name="${esc(x.name)}">New owner password</button>
           ${x.status === 'active' ? `<button class="btn danger" data-pause="${x.id}" data-name="${esc(x.name)}">Pause</button>` : `<button class="btn" data-resume="${x.id}">Resume</button>`}
         </div></td></tr>`).join('')}
-    </tbody></table></div>` : `<div class="card"><p>No schools yet. <strong>Onboard a school</strong> creates the school with its classes and settings, and the owner's login.</p></div>`}`;
+    </tbody></table></div>` : `<div class="card"><p style="margin:0">No schools yet. <b>Onboard a school</b> creates the school with its classes and settings, and the owner's login.</p></div>`}`;
   $('#newSchool').addEventListener('click', openNewSchool);
-  el.querySelectorAll('[data-pause]').forEach((b) => b.addEventListener('click', async () => {
+  $$('[data-pause]', el).forEach((b) => b.addEventListener('click', async () => {
     if (!confirm(`Pause ${b.dataset.name}? Nobody at this school (staff or parents) can use Arscio until you resume it. Nothing is deleted.`)) return;
     await api(`/api/schools/${b.dataset.pause}/status`, { method: 'POST', body: JSON.stringify({ status: 'suspended' }) }); loadSchools();
   }));
-  el.querySelectorAll('[data-resume]').forEach((b) => b.addEventListener('click', async () => {
+  $$('[data-resume]', el).forEach((b) => b.addEventListener('click', async () => {
     await api(`/api/schools/${b.dataset.resume}/status`, { method: 'POST', body: JSON.stringify({ status: 'active' }) }); loadSchools();
   }));
-  el.querySelectorAll('[data-pw]').forEach((b) => b.addEventListener('click', async () => {
+  $$('[data-pw]', el).forEach((b) => b.addEventListener('click', async () => {
     if (!confirm(`Give the owner of ${b.dataset.name} a new one-time password? Their current password stops working and they are logged out everywhere.`)) return;
     try {
       const r = await api(`/api/schools/${b.dataset.pw}/owner-password`, { method: 'POST' });
@@ -285,15 +720,15 @@ function credsHtml(school, owner, email, tel, password, website) {
   return `<div class="creds">
     <p class="small muted" style="margin-top:0">Give these to the owner privately (in person or a phone call). The password is shown only now.</p>
     <dl class="kv">
-      <dt>School</dt><dd><strong>${esc(school)}</strong></dd>
+      <dt>School</dt><dd><b>${esc(school)}</b></dd>
       <dt>Owner</dt><dd>${esc(owner)}</dd>
       ${website ? `<dt>Website</dt><dd>${esc(website)}</dd>` : ''}
       <dt>Log in with</dt><dd>${[email, phone(tel)].filter(Boolean).map(esc).join(' or ')}</dd>
       <dt>Password</dt><dd>${password ? `<span class="pw">${esc(password)}</span>` : '<span class="muted">their existing Arscio password</span>'}</dd>
     </dl>
-    ${password ? '<p class="small" style="margin-bottom:0">It works once: after logging in they must choose their own password.</p>' : ''}
+    ${password ? '<p class="small" style="margin:14px 0 0">It works once: after logging in they must choose their own password.</p>' : ''}
   </div>
-  <div class="row" style="margin-top:16px">
+  <div class="row" style="margin-top:18px">
     <button class="btn" onclick="window.print()">Print</button>
     <button class="btn" id="copyCreds">Copy</button>
     <button class="btn primary" onclick="closePanel()">Done</button>
@@ -310,13 +745,13 @@ function openNewSchool() {
         <div class="f"><label for="sBoard">Board</label><select id="sBoard"><option>CBSE</option><option>SEBA</option><option>ICSE</option><option>State board</option><option>Other</option></select></div>
       </div>
       <div class="f"><label for="sAddr">Address (optional)</label><input id="sAddr" maxlength="300" placeholder="Ward 4, Dhubri, Assam 783301"></div>
-      <h2 style="margin-top:18px">Owner</h2>
+      <h2 style="margin:20px 0 12px">Owner</h2>
       <div class="f"><label for="oName">Owner's name</label><input id="oName" required maxlength="80"></div>
       <div class="two">
         <div class="f"><label for="oPhone">Mobile number</label><input id="oPhone" required inputmode="tel" placeholder="98765 43210"></div>
         <div class="f"><label for="oEmail">Email</label><input id="oEmail" type="email" maxlength="120"><span class="hint">They can log in with email or mobile.</span></div>
       </div>
-      <h2 style="margin-top:18px">School session</h2>
+      <h2 style="margin:20px 0 12px">School session</h2>
       <div class="three">
         <div class="f"><label for="yName">Name</label><input id="yName" value="${esc(d.name)}"></div>
         <div class="f"><label for="yFrom">Starts</label><input id="yFrom" type="date" value="${d.startsOn}"></div>
@@ -334,46 +769,53 @@ function openNewSchool() {
       session: { name: $('#yName').value, startsOn: $('#yFrom').value, endsOn: $('#yTo').value } };
     try {
       const r = await api('/api/schools', { method: 'POST', body: JSON.stringify(body) });
-      openPanel('School created', (r.note ? `<p class="small">${esc(r.note)}</p>` : '') +
-        credsHtml(body.name, body.ownerName, r.login.email, r.login.phone, r.password, r.login.website));
+      openPanel('School created', (r.note ? `<p class="small">${esc(r.note)}</p>` : '') + credsHtml(body.name, body.ownerName, r.login.email, r.login.phone, r.password, r.login.website));
       loadSchools();
     } catch (err) { $('#schoolErr').textContent = err.message; $('#createBtn').disabled = false; }
   });
 }
-// ---------------- Activity ----------------
+
+// ============================================================ Activity
 async function loadActivity() {
   const el = $('#activity');
   let a;
   try { a = await api('/api/activity'); } catch (err) { el.innerHTML = `<p class="err">${esc(err.message)}</p>`; return; }
   const ACTIONS = { school_created: 'School onboarded', school_paused: 'School paused', school_resumed: 'School resumed', owner_password_reset: 'Owner password reset', control_login: 'Control panel login' };
+  const days = [...a.days].reverse();
   el.innerHTML = `
-    <h1>Activity</h1><p class="sub">The last 14 days, across all schools.</p>
-    <div class="grid">
-      <div class="card wide"><table><thead><tr><th>Day</th><th class="num">People using Arscio</th><th class="num">Attendance taken</th><th class="num">Fee receipts</th><th class="num">Marks entered</th><th class="num">Messages sent</th><th class="num">Errors</th></tr></thead><tbody>
+    <div class="page-head"><div><h1>Activity</h1><p>The last 14 days, across all schools.</p></div></div>
+    <div class="grid dash">
+      <div class="card c12"><div class="card-head"><h2>People using Arscio each day</h2>
+        <div class="legend"><span><i style="background:var(--sky)"></i>People</span><span><i style="background:var(--mint)"></i>Attendance taken</span><span><i style="background:var(--gold)"></i>Fee receipts</span></div></div>
+        <div class="chart" id="cDays"></div></div>
+      <div class="card c8"><table><thead><tr><th>Day</th><th class="num">People</th><th class="num">Attendance</th><th class="num">Receipts</th><th class="num">Marks</th><th class="num">Messages</th><th class="num">Errors</th></tr></thead><tbody>
         ${a.days.map((d) => `<tr><td>${new Date(d.day + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}</td>
-          <td class="num">${d.activePeople}</td><td class="num">${d.attendanceTaken}</td><td class="num">${d.receipts}</td><td class="num">${d.marksEntered}</td>
-          <td class="num">${d.messagesSent}</td><td class="num">${d.errors ? `<span class="pill bad">${d.errors}</span>` : 0}</td></tr>`).join('')}
+          <td class="num">${n(d.activePeople)}</td><td class="num">${n(d.attendanceTaken)}</td><td class="num">${n(d.receipts)}</td><td class="num">${n(d.marksEntered)}</td>
+          <td class="num">${n(d.messagesSent)}</td><td class="num">${d.errors ? `<span class="chip bad">${d.errors}</span>` : 0}</td></tr>`).join('')}
       </tbody></table></div>
-      <div class="card wide"><h2>Done in this control panel</h2>
-        ${a.recent.length ? `<table><tbody>${a.recent.map((r) => `<tr><td class="small">${dateTime(r.at)}</td><td>${esc(ACTIONS[r.action] ?? r.action)}</td><td class="small muted">${esc(r.school ?? '')}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing yet.</p>'}
+      <div class="card c4"><div class="card-head"><h2>Done in this panel</h2></div>
+        ${a.recent.length ? `<table><tbody>${a.recent.map((r) => `<tr><td class="small" style="white-space:nowrap">${dateTime(r.at)}</td><td>${esc(ACTIONS[r.action] ?? r.action)}<div class="tiny faint">${esc(r.school ?? '')}</div></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing yet.</p>'}
       </div>
     </div>`;
+  timeChart($('#cDays'), days.map((d) => new Date(d.day + 'T12:00:00+05:30').getTime()), [
+    { name: 'People', color: 'var(--sky)', values: days.map((d) => d.activePeople), kind: 'area' },
+    { name: 'Attendance taken', color: 'var(--mint)', values: days.map((d) => d.attendanceTaken) },
+    { name: 'Fee receipts', color: 'var(--gold)', values: days.map((d) => d.receipts) },
+  ], { height: 220 });
 }
 
-// ---------------- side panel ----------------
+// ============================================================ side panel
 function openPanel(title, html) {
-  $('#panel').innerHTML = `<h1 id="panelTitle" style="font-size:22px;margin-bottom:16px">${esc(title)}</h1>${html}`;
+  $('#panel').innerHTML = `<div class="row between" style="margin-bottom:18px"><h1 id="panelTitle" style="font-size:1.35rem">${esc(title)}</h1><button class="tool" onclick="closePanel()" aria-label="Close">Close</button></div>${html}`;
   $('#panel').classList.remove('hidden'); $('#shade').classList.remove('hidden');
   const copy = $('#copyCreds');
-  if (copy && !copy.dataset.wired) {
-    copy.dataset.wired = '1';
-    copy.addEventListener('click', () => navigator.clipboard.writeText($('#panel .creds').innerText).then(() => { copy.textContent = 'Copied'; }));
-  }
+  if (copy) copy.addEventListener('click', () => navigator.clipboard.writeText($('#panel .creds').innerText).then(() => { copy.textContent = 'Copied'; }));
 }
 function closePanel() { $('#panel').classList.add('hidden'); $('#shade').classList.add('hidden'); }
 $('#shade').addEventListener('click', closePanel);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 
+if (document.body.classList.contains('wall')) $('#wallBtn').textContent = 'Exit wall mode';
 api('/api/me').then((r) => (r.loggedIn ? showApp() : showLogin())).catch(showLogin);
 </script>
 </body>
