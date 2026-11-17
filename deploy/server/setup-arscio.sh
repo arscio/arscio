@@ -45,8 +45,12 @@ case "$(uname -m)" in aarch64) NARCH=arm64 ;; x86_64) NARCH=x64 ;; *) fail "Unkn
 [ -f "$CADDY" ] || fail "Caddy's settings file $CADDY was not found."
 command -v caddy >/dev/null || fail "Caddy is not installed."
 for p in $API_PORT $WEB_PORT $CONTROL_PORT; do
-  owner=$(ss -ltnp "sport = :$p" 2>/dev/null | grep -o 'users:(("[^"]*' | head -1 | cut -d'"' -f2 || true)
-  [ -z "$owner" ] || [ "$owner" = node ] || fail "Port $p is already used by $owner."
+  line=$(ss -ltnp "sport = :$p" 2>/dev/null | grep -o 'users:(("[^"]*",pid=[0-9]*' | head -1 || true)
+  [ -n "$line" ] || continue
+  owner=$(echo "$line" | cut -d'"' -f2); pid=${line##*pid=}
+  # Arscio's own services (from an earlier install) are fine: this run updates them.
+  grep -q 'arscio-' "/proc/$pid/cgroup" 2>/dev/null && continue
+  fail "Port $p is already used by another program ($owner)."
 done
 AVAIL_MB=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
 [ "$AVAIL_MB" -ge 600 ] || fail "Only ${AVAIL_MB} MB of memory is free; Arscio needs about 600 MB."
