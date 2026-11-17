@@ -2,7 +2,7 @@
 // Issue a transfer, bonafide or character certificate. Arscio fills in what it already knows.
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { ErrorBox, Field, Loading, Panel } from './ui';
 
 type Kind = 'tc' | 'bonafide' | 'character';
@@ -95,7 +95,7 @@ export function IssueCertificate({ studentId, open, onClose, onIssued }: {
             ))}
           </div>
           <p className="small muted" style={{ margin: 0 }}>
-            For <strong>{p.student.name}</strong>{p.student.className ? `, ${classLabel(p.student.className)} ${p.student.sectionName ?? ''}` : ''}.{' '}
+            For <strong>{p.student.name}</strong>{p.student.className ? `, ${sectionLabel(p.student.className, p.student.sectionName ?? '')}` : ''}.{' '}
             {setting?.signMode === 'printed' ? `It will carry the printed signature of ${who}.` : `Print it and ${who} signs by hand.`}
           </p>
           <ErrorBox error={err ?? disabledReason} />

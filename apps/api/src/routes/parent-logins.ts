@@ -61,7 +61,7 @@ export function registerParentLoginRoutes(app: FastifyInstance, db: Db, requireS
     const q = z.object({ sectionId: z.string().uuid(), onlyNew: z.enum(['0', '1']).default('0') }).parse(req.query);
     const { school, slips, label } = await schoolTx(db, req, async (tx) => {
       const sec = (await tx.query<{ label: string }>(
-        `SELECT c.name || '-' || s.name AS label, c.name AS cname, s.name AS sname FROM sections s JOIN classes c ON c.id = s.class_id WHERE s.id = $1`,
+        `SELECT c.name || CASE WHEN s.name = '' THEN '' ELSE '-' || s.name END AS label, c.name AS cname, s.name AS sname FROM sections s JOIN classes c ON c.id = s.class_id WHERE s.id = $1`,
         [q.sectionId])).rows[0];
       if (!sec) throw notFound('Class not found');
       const rows = (await tx.query<{ name: string; adm: string; has_dob: boolean; family_id: string; cls: string; sec: string; started: boolean }>(

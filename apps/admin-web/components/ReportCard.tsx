@@ -2,7 +2,7 @@
 // A printable report card. It's the SCHOOL's document (school name, crest and colour),
 // printed with little ink, with a small "Powered by Arscio" at the very bottom.
 import { photoSrc } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { num, pct, type Report } from './Exams';
 
 const date = (d: string | null) => (d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-');
@@ -30,7 +30,7 @@ export function ReportCard({ r }: { r: Report }) {
       <div className="report-student">
         <dl>
           <div><dt>Student</dt><dd>{r.student.name}</dd></div>
-          <div><dt>Class</dt><dd>{classLabel(r.student.className)} {r.student.sectionName}{r.student.rollNo ? `, Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</dd></div>
+          <div><dt>Class</dt><dd>{sectionLabel(r.student.className, r.student.sectionName)}{r.student.rollNo ? `, Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</dd></div>
           <div><dt>Admission no.</dt><dd>{r.student.admissionNo}</dd></div>
           <div><dt>Date of birth</dt><dd>{date(r.student.dateOfBirth)}</dd></div>
           <div><dt>Father</dt><dd>{r.student.fatherName ?? '-'}</dd></div>

@@ -5,7 +5,7 @@ import { ScrollView, View } from 'react-native';
 import { rupeesInWords } from '@arscio/shared';
 import { call } from '@/lib/api';
 import { useParent } from '@/lib/auth';
-import { C, classLabel } from '@/lib/theme';
+import { C, classLabel, sectionLabel } from '@/lib/theme';
 import { Card, Loading, T } from '@/components/ui';
 import { SchoolLogo } from '@/components/School';
 import { rupees, shortDate } from '../index';
@@ -48,7 +48,7 @@ export default function ReceiptScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <T bold>Fee receipt</T><T soft size={14}>{shortDate(r.paidOn)}</T>
         </View>
-        <T size={14}>No. {r.receiptNo}{'\n'}{r.student.name}, {r.student.className ? `${classLabel(r.student.className)} ${r.student.sectionName}` : ''}{'\n'}Admission no. {r.student.admissionNo}, session {r.yearName}</T>
+        <T size={14}>No. {r.receiptNo}{'\n'}{r.student.name}, {r.student.className ? `${sectionLabel(r.student.className, r.student.sectionName)}` : ''}{'\n'}Admission no. {r.student.admissionNo}, session {r.yearName}</T>
         <View style={{ borderTopWidth: 1, borderColor: C.rule, paddingTop: 8, gap: 6 }}>
           {r.lines.map((l, i) => (
             <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>

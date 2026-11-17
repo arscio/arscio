@@ -2,7 +2,7 @@
 // The digital student file: photo, checklist, documents (view on screen, download one or all).
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, api, fileUrl, photoSrc, readUpload } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { ErrorBox, Field, Loading, useToast } from './ui';
 import { IssueCertificate } from './IssueCertificate';
 
@@ -163,7 +163,7 @@ function PhotoCard({ f, onChanged }: { f: FileData; onChanged: () => void }) {
         <ErrorBox error={err} />
         <dl className="id-facts">
           <div><dt>Admission no.</dt><dd className="num">{s.admissionNo}</dd></div>
-          <div><dt>Class</dt><dd>{s.className ? `${classLabel(s.className)} ${s.sectionName ?? ''}` : '—'}</dd></div>
+          <div><dt>Class</dt><dd>{s.className ? `${sectionLabel(s.className, s.sectionName ?? '')}` : '—'}</dd></div>
           <div style={{ gridColumn: '1 / -1' }}>
             <dt>Aadhaar (last 4)</dt>
             <dd>

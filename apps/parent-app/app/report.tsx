@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
 import { useParent } from '@/lib/auth';
-import { C, SH, classLabel } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { ErrorText, Loading, T } from '@/components/ui';
 import { SchoolBand, SchoolLogo } from '@/components/School';
 
@@ -82,7 +82,7 @@ export default function ReportScreen() {
                 </View>
                 <View style={st.dashed}>
                   <T bold size={16}>{r.student.name}</T>
-                  <T soft size={13}>{classLabel(r.student.className)} {r.student.sectionName}{r.student.rollNo ? ` · Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</T>
+                  <T soft size={13}>{sectionLabel(r.student.className, r.student.sectionName)}{r.student.rollNo ? ` · Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</T>
                 </View>
 
                 {marks && term.pct !== null ? (

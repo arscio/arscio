@@ -44,6 +44,9 @@ export const SH = {
 } as const;
 
 export const classLabel = (name: string) => (/^\d+$/.test(name) ? `Class ${name}` : name);
+// "Class 6" when the class has one section (stored without a letter), "Class 6 B" when it has several.
+export const sectionLabel = (className: string, sectionName?: string | null) =>
+  `${classLabel(className)}${sectionName ? ` ${sectionName}` : ''}`;
 
 export const longDate = (d: string) =>
   new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });

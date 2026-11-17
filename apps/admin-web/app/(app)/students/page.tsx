@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { classLabel, showPhone, type Structure, type StudentRow } from '@/lib/types';
+import { classLabel, sectionLabel, showPhone, type Structure, type StudentRow } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { Loading } from '@/components/ui';
 
@@ -43,7 +43,7 @@ export default function StudentsPage() {
           <option value="">All classes</option>
           {structure?.classes.map((c) => c.sections.length ? (
             <optgroup key={c.id} label={classLabel(c.name)}>
-              {c.sections.map((s) => <option key={s.id} value={s.id}>{classLabel(c.name)} {s.name}</option>)}
+              {c.sections.map((s) => <option key={s.id} value={s.id}>{sectionLabel(c.name, s.name)}</option>)}
             </optgroup>
           ) : null)}
         </select>
@@ -74,7 +74,7 @@ export default function StudentsPage() {
                   {s.status !== 'active' ? <span className="tag tag-off" style={{ marginLeft: 8 }}>{s.status.replace('_', ' ')}</span> : null}
                 </td>
                 <td className="num">{s.admissionNo}</td>
-                <td>{s.className ? `${classLabel(s.className)} ${s.sectionName}` : <span className="muted">-</span>}</td>
+                <td>{s.className ? `${sectionLabel(s.className, s.sectionName)}` : <span className="muted">-</span>}</td>
                 <td className="small">{[s.fatherName, s.motherName].filter(Boolean).join(', ') || <span className="muted">-</span>}</td>
                 <td className="num nowrap">{showPhone(s.familyPhone)}</td>
               </tr>

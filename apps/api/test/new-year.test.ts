@@ -57,7 +57,7 @@ describe('New school year', () => {
     // Add a section to class 7 next year
     expect((await office.post('/new-year/sections', { classId: cls['7'], name: 'a' })).statusCode).toBe(200);
     state = (await office.get('/new-year')).json();
-    expect(state.next.sections.map((s: any) => `${s.className}${s.name}`).sort()).toEqual(['6A', `${lastClass}A`, '7A'].sort());
+    expect(state.next.sections.map((s: any) => `${s.className}${s.name}`).sort()).toEqual(['6A', `${lastClass}A`, '7'].sort());
     expect(state.next.sections.find((s: any) => s.className === '6').classTeacher).toBe('Mrs Bora');
   });
 

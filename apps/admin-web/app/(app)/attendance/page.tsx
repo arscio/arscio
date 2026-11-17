@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel, showPhone } from '@/lib/types';
+import { classLabel, sectionLabel, showPhone } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { ErrorBox, Loading, Panel, useToast } from '@/components/ui';
 
@@ -77,7 +77,7 @@ export default function AttendancePage() {
 
       {notTaken.length > 0 && r.date === r.today ? (
         <div className="notice" style={{ marginBottom: 16 }}>
-          <strong>Not taken yet:</strong> {notTaken.map((s) => `${classLabel(s.className)} ${s.sectionName}`).join(', ')}.
+          <strong>Not taken yet:</strong> {notTaken.map((s) => `${sectionLabel(s.className, s.sectionName)}`).join(', ')}.
         </div>
       ) : null}
 
@@ -87,7 +87,7 @@ export default function AttendancePage() {
             <thead><tr><th>Class</th><th>Class teacher</th><th>Taken by</th><th>Present</th><th>Absent</th><th>Leave</th><th></th></tr></thead>
             <tbody>{r.sections.map((s) => (
               <tr key={s.sectionId}>
-                <td><strong>{classLabel(s.className)} {s.sectionName}</strong><div className="small muted num">{s.students} {s.students === 1 ? 'student' : 'students'}</div></td>
+                <td><strong>{sectionLabel(s.className, s.sectionName)}</strong><div className="small muted num">{s.students} {s.students === 1 ? 'student' : 'students'}</div></td>
                 <td className="small">{s.classTeacher ?? <span className="muted">Not chosen</span>}</td>
                 <td className="small">
                   {s.taken ? <>{s.takenBy}<div className="muted">{time(s.takenAt!)}{s.periodsTaken > 1 ? `, ${s.periodsTaken} periods` : ''}</div></>
@@ -114,7 +114,7 @@ export default function AttendancePage() {
                 <td className="num muted">{a.rollNo ?? '-'}</td>
                 <td><Link href={`/students/${a.id}`} style={{ color: 'inherit', fontWeight: 700, textDecoration: 'none' }}>{a.firstName} {a.lastName ?? ''}</Link>
                   {a.note ? <div className="small muted">{a.note}</div> : null}</td>
-                <td>{classLabel(a.className)} {a.sectionName}</td>
+                <td>{sectionLabel(a.className, a.sectionName)}</td>
                 <td className="small">{a.parentName ?? '-'}</td>
                 <td className="num nowrap"><a href={`tel:${a.phone}`}>{showPhone(a.phone)}</a></td>
                 <td>{a.absentLast30 >= 3 ? <span className="tag tag-warn">{a.absentLast30} days</span> : <span className="num">{a.absentLast30} {a.absentLast30 === 1 ? 'day' : 'days'}</span>}</td>
@@ -124,7 +124,7 @@ export default function AttendancePage() {
         )}
       </div>
 
-      <Panel open={!!open} title={open ? `${classLabel(open.className)} ${open.sectionName}` : ''} onClose={() => setOpen(null)}>
+      <Panel open={!!open} title={open ? `${sectionLabel(open.className, open.sectionName)}` : ''} onClose={() => setOpen(null)}>
         {open ? <RegisterEditor key={`${open.sectionId}${r.date}`} sectionId={open.sectionId} date={r.date}
           onSaved={async (msg) => { setOpen(null); await load(date); toast.show(msg); }} /> : null}
       </Panel>

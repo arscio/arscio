@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { ExamsTabs, num, shortDate, type Band } from '@/components/Exams';
 import { ErrorBox, Loading, useToast } from '@/components/ui';
 
@@ -80,7 +80,7 @@ function Enter() {
       <div className="page-head">
         <div>
           <Link href="/exams/marks" className="small">Back to marks</Link>
-          <h1 style={{ marginTop: 4 }}>{s.subject.name}, {classLabel(s.section.className)} {s.section.sectionName}</h1>
+          <h1 style={{ marginTop: 4 }}>{s.subject.name}, {sectionLabel(s.section.className, s.section.sectionName)}</h1>
           <p>{s.exam.termName}: {s.exam.name}{s.exam.locked ? ' (locked: only the principal can change these marks)' : ''}
             {s.exam.marksDueOn && !submitted ? `. Due ${shortDate(s.exam.marksDueOn)}` : ''}</p>
           {s.submission ? (

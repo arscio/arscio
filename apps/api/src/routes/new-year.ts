@@ -7,6 +7,7 @@
 //  The same day, if nothing has happened in the new year yet, the move can be undone.
 import type { FastifyInstance, preHandlerHookHandler } from 'fastify';
 import { z } from 'zod';
+import { addSection } from '../students/sections.js';
 import type { Db, Tx } from '../db.js';
 import { badRequest, notFound } from '../errors.js';
 import { must, schoolTx } from '../context.js';
@@ -90,8 +91,8 @@ export function registerNewYearRoutes(app: FastifyInstance, db: Db, requireSchoo
       // Same sections, keeping the class teacher if asked
       const map = (await tx.query<{ old_id: string; new_id: string }>(
         `WITH src AS (SELECT * FROM sections WHERE academic_year_id = $1),
-              ins AS (INSERT INTO sections (school_id, academic_year_id, class_id, name, class_teacher_membership)
-                      SELECT school_id, $2, class_id, name, CASE WHEN $3 THEN class_teacher_membership END FROM src RETURNING id, class_id, name)
+              ins AS (INSERT INTO sections (school_id, academic_year_id, class_id, name, seats, class_teacher_membership)
+                      SELECT school_id, $2, class_id, name, seats, CASE WHEN $3 THEN class_teacher_membership END FROM src RETURNING id, class_id, name)
          SELECT src.id AS old_id, ins.id AS new_id FROM src JOIN ins ON ins.class_id = src.class_id AND ins.name = src.name`,
         [cur.id, yearId, b.copyTeachers])).rows;
       if (b.copyTeachers) {
@@ -126,14 +127,11 @@ export function registerNewYearRoutes(app: FastifyInstance, db: Db, requireSchoo
 
   app.post('/new-year/sections', pre, async (req) => {
     must(req, 'school.settings');
-    const b = z.object({ classId: uuid, name: z.string().trim().min(1).max(10) }).parse(req.body);
+    const b = z.object({ classId: uuid, name: z.string().trim().max(10).optional() }).parse(req.body);
     return schoolTx(db, req, async (tx) => {
       const { next } = await years(tx);
       if (!next) throw badRequest('not_prepared', 'Prepare the new year first');
-      const dupe = await tx.query('SELECT 1 FROM sections WHERE academic_year_id = $1 AND class_id = $2 AND upper(name) = upper($3)', [next.id, b.classId, b.name]);
-      if (dupe.rowCount) throw badRequest('duplicate', 'That section already exists');
-      return (await tx.query(`INSERT INTO sections (school_id, academic_year_id, class_id, name) VALUES (app_school_id(), $1, $2, upper($3)) RETURNING id`,
-        [next.id, b.classId, b.name])).rows[0];
+      return addSection(tx, req.school!.schoolId, b.classId, next.id, b.name);
     });
   });
 

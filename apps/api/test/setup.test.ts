@@ -26,8 +26,9 @@ describe('Classes, sections and subjects', () => {
   });
 
   it('adds sections; refuses duplicates', async () => {
-    expect((await owner.post('/sections', { classId: class5, name: 'a' })).json().name).toBe('A');
-    await owner.post('/sections', { classId: class5, name: 'B' });
+    // A class's only section has no letter ("Class 5"); the second one makes them A and B.
+    expect((await owner.post('/sections', { classId: class5, name: 'a' })).json().name).toBe('');
+    expect((await owner.post('/sections', { classId: class5, name: 'B' })).json().name).toBe('B');
     const dup = await owner.post('/sections', { classId: class5, name: 'A' });
     expect(dup.statusCode).toBe(400);
     expect(dup.json().error.message).toMatch(/already exists/);

@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api, fileUrl } from '@/lib/api';
-import { classLabel, showPhone, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, showPhone, type Structure } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { ErrorBox, Loading, useToast } from '@/components/ui';
 
@@ -30,7 +30,7 @@ export default function ParentLogins() {
   useEffect(() => { void load(); }, [load]);
   if (!structure || !data) return <Loading />;
 
-  const sections = structure.classes.flatMap((c) => c.sections.map((s) => ({ id: s.id, label: `${classLabel(c.name)} ${s.name}` })));
+  const sections = structure.classes.flatMap((c) => c.sections.map((s) => ({ id: s.id, label: `${sectionLabel(c.name, s.name)}` })));
   const reset = async (r: Row) => {
     if (!confirm(`Reset the parent login for ${r.name}'s family? Their password goes back to the date of birth and they are logged out everywhere.`)) return;
     setError(null);
@@ -85,7 +85,7 @@ export default function ParentLogins() {
               <tr key={r.id}>
                 <td className="num muted">{r.rollNo ?? '-'}</td>
                 <td><Link href={`/students/${r.id}`}><strong>{r.name}</strong></Link>
-                  {!sectionId && r.className ? <div className="small muted">{classLabel(r.className)} {r.sectionName}</div> : null}</td>
+                  {!sectionId && r.className ? <div className="small muted">{sectionLabel(r.className, r.sectionName)}</div> : null}</td>
                 <td className="num nowrap">{r.admissionNo}</td>
                 <td className="num nowrap">{showPhone(r.familyPhone)}</td>
                 <td className="small">

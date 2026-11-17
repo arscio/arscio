@@ -6,7 +6,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, call } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { C, SH, classLabel, longDate } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel, longDate } from '@/lib/theme';
 import { Avatar, Button, Card, ErrorText, Loading, Logo, Pill, T } from '@/components/ui';
 
 export interface Today {
@@ -98,11 +98,11 @@ export default function Home() {
           <T soft size={13}>{data.day.note ?? 'No attendance or classes today. Enjoy the day.'}</T>
         </View>
       ) : hero ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Take attendance for ${classLabel(hero.className)} ${hero.sectionName}`}
+        <Pressable accessibilityRole="button" accessibilityLabel={`Take attendance for ${sectionLabel(hero.className, hero.sectionName)}`}
           onPress={() => open(hero.sectionId)} style={({ pressed }) => [st.hero, pressed && st.pressed]}>
           <View style={st.heroGlow} />
           <T size={13} style={{ color: '#CDEFF8' }}>{hero.isClassTeacher ? 'Your class · roll call' : 'Attendance to take'}</T>
-          <T display size={28} style={{ color: '#fff' }}>{classLabel(hero.className)} {hero.sectionName}</T>
+          <T display size={28} style={{ color: '#fff' }}>{sectionLabel(hero.className, hero.sectionName)}</T>
           <T size={14} style={{ color: '#fff' }}>{hero.studentCount} students · not marked yet</T>
           <View style={st.heroBtn}><T bold size={14} style={{ color: C.goldInk }}>Take attendance</T></View>
         </Pressable>
@@ -164,11 +164,11 @@ export default function Home() {
         const periodsDone = x.taken.filter((t) => t.periodNo > 0).map((t) => t.periodNo);
         return (
           <View key={x.sectionId} style={st.cls}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Attendance for ${classLabel(x.className)} ${x.sectionName}`}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Attendance for ${sectionLabel(x.className, x.sectionName)}`}
               onPress={() => open(x.sectionId)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={st.badge}><T display size={17} style={{ color: C.boardDeep }}>{x.className}{x.sectionName}</T></View>
               <View style={{ flex: 1 }}>
-                <T bold size={16}>{classLabel(x.className)} {x.sectionName}</T>
+                <T bold size={16}>{sectionLabel(x.className, x.sectionName)}</T>
                 <T soft size={13} numberOfLines={2}>{[x.isClassTeacher ? 'Class teacher' : null, x.subjects.map((y) => y.name).join(', ') || null, `${x.studentCount} students`].filter(Boolean).join(' · ')}</T>
               </View>
             </Pressable>
@@ -178,7 +178,7 @@ export default function Home() {
                   ? (day ? <Pill tone="done" text={`${day.present} present, ${day.absent} absent${day.leave ? `, ${day.leave} leave` : ''}`} /> : <Pill tone="todo" text="Attendance not taken" />)
                   : (periodsDone.length ? <Pill tone="done" text={`Periods done: ${periodsDone.join(', ')}`} /> : <Pill tone="todo" text="No periods taken" />)}
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel={`Give homework to ${classLabel(x.className)} ${x.sectionName}`}
+              <Pressable accessibilityRole="button" accessibilityLabel={`Give homework to ${sectionLabel(x.className, x.sectionName)}`}
                 onPress={() => router.push({ pathname: '/homework/new', params: { sectionId: x.sectionId } })}
                 style={({ pressed }) => [st.small, pressed && st.pressed]}>
                 <T bold size={13} style={{ color: C.board }}>Give homework</T>

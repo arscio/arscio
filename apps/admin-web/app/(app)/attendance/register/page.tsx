@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { classLabel, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, type Structure } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { Loading } from '@/components/ui';
 
@@ -58,7 +58,7 @@ export default function MonthlyRegister() {
           <select className="input" style={{ width: 180 }} aria-label="Class" value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
             {structure.classes.map((c) => c.sections.length ? (
               <optgroup key={c.id} label={classLabel(c.name)}>
-                {c.sections.map((s) => <option key={s.id} value={s.id}>{classLabel(c.name)} {s.name}</option>)}
+                {c.sections.map((s) => <option key={s.id} value={s.id}>{sectionLabel(c.name, s.name)}</option>)}
               </optgroup>
             ) : null)}
           </select>
@@ -74,7 +74,7 @@ export default function MonthlyRegister() {
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
               <div className="print-only"><strong>{info.school.name}</strong></div>
-              <h2>{classLabel(r.section.className)} {r.section.sectionName}, {monthName(r.month)}</h2>
+              <h2>{sectionLabel(r.section.className, r.section.sectionName)}, {monthName(r.month)}</h2>
               <p className="small muted">Class teacher: {r.section.classTeacher ?? 'not chosen'}. {r.schoolDays.length} school {r.schoolDays.length === 1 ? 'day' : 'days'} marked.</p>
             </div>
             <p className="small muted">P present, A absent, L leave, Lt late. Grey days: no attendance taken.</p>

@@ -3,7 +3,7 @@
 // and each class's grid of subject + teacher per period.
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, type Structure } from '@/lib/types';
 import { ErrorBox, Field, Loading, Panel, useToast } from '@/components/ui';
 
 interface Settings {
@@ -77,7 +77,7 @@ export default function TimetablePage() {
       <div className="row" style={{ marginBottom: 14 }}>
         <label htmlFor="sec" className="small muted">Class</label>
         <select id="sec" className="input" style={{ width: 200 }} value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
-          {structure.classes.flatMap((c) => c.sections.map((x) => <option key={x.id} value={x.id}>{classLabel(c.name)} {x.name}</option>))}
+          {structure.classes.flatMap((c) => c.sections.map((x) => <option key={x.id} value={x.id}>{sectionLabel(c.name, x.name)}</option>))}
         </select>
         <span className="small muted">Click a box to choose the subject and teacher.</span>
       </div>

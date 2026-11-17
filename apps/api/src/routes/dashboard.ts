@@ -7,8 +7,9 @@ import type { FastifyInstance, preHandlerHookHandler } from 'fastify';
 import { z } from 'zod';
 import type { Db, Tx } from '../db.js';
 import { badRequest } from '../errors.js';
-import { must, schoolTx } from '../context.js';
+import { can, must, schoolTx } from '../context.js';
 import { todayIST } from './attendance.js';
+import { seatAlerts } from '../students/sections.js';
 import { dayFor, scheduleFor, settings } from '../timetable/service.js';
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -75,7 +76,7 @@ export function registerDashboardRoutes(app: FastifyInstance, db: Db, requireSch
 
       // ---- Today's student attendance (first attendance of the day counts) ----
       const sections = (await tx.query<{ id: string; label: string; students: number; taken: boolean }>(
-        `SELECT s.id, CASE WHEN c.name ~ '^[0-9]+$' THEN 'Class ' || c.name ELSE c.name END || ' ' || s.name AS label,
+        `SELECT s.id, section_label(c.name, s.name) AS label,
                 (SELECT count(*)::int FROM enrollments e JOIN students st ON st.id = e.student_id AND st.status = 'active' WHERE e.section_id = s.id) AS students,
                 EXISTS (SELECT 1 FROM attendance_sessions a WHERE a.section_id = s.id AND a.on_date = $2) AS taken
            FROM sections s JOIN classes c ON c.id = s.class_id
@@ -106,7 +107,7 @@ export function registerDashboardRoutes(app: FastifyInstance, db: Db, requireSch
         [year.id, today, monthStart])).rows[0];
       const defaulters = (await tx.query(
         `SELECT st.id AS "studentId", st.first_name || coalesce(' ' || st.last_name, '') AS name,
-                CASE WHEN c.name ~ '^[0-9]+$' THEN 'Class ' || c.name ELSE c.name END || ' ' || sec.name AS class,
+                section_label(c.name, sec.name) AS class,
                 sum(b.balance) AS overdue, min(b.due_on) AS "since"
            FROM fee_due_balances b
            JOIN fee_instalments i ON i.id = b.instalment_id
@@ -144,7 +145,7 @@ export function registerDashboardRoutes(app: FastifyInstance, db: Db, requireSch
                   FROM attendance_sessions a JOIN attendance_marks k ON k.session_id = a.id
                  WHERE a.on_date IN (SELECT on_date FROM days) ORDER BY k.student_id, a.on_date, a.period_no)
          SELECT st.first_name || coalesce(' ' || st.last_name, '') AS name,
-                CASE WHEN c.name ~ '^[0-9]+$' THEN 'Class ' || c.name ELSE c.name END || ' ' || sec.name AS class
+                section_label(c.name, sec.name) AS class
            FROM day_status d
            JOIN students st ON st.id = d.student_id
            JOIN enrollments e ON e.student_id = st.id AND e.academic_year_id = $2
@@ -177,6 +178,12 @@ export function registerDashboardRoutes(app: FastifyInstance, db: Db, requireSch
           WHERE EXISTS (SELECT 1 FROM marks m2 WHERE m2.exam_id = x.id) AND NOT x.marks_locked
           GROUP BY x.id, x.name HAVING sum(GREATEST(sec_count.students - coalesce(entered.n, 0), 0)) > 0`, [year.id])).rows;
       for (const g of marksGap) attention.push({ kind: 'marks', tone: 'info', href: '/exams/marks', text: `${g.exam}: ${g.missing} marks still to be entered` });
+      if (can(req, 'school.settings')) {
+        for (const a of await seatAlerts(tx, year.id)) {
+          attention.push({ kind: 'seats', tone: 'warn', href: `/classes?seats=${a.classId}`,
+            text: `${a.label} has ${a.students} students for ${a.seats} seats. Keep it as it is, or make another section.` });
+        }
+      }
 
       return {
         date: today,

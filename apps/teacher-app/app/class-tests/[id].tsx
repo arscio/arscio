@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, call } from '@/lib/api';
-import { C, F, SH, classLabel } from '@/lib/theme';
+import { C, F, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { Avatar, Button, ErrorText, Loading, T } from '@/components/ui';
 import { shortDate } from '../homework/index';
 
@@ -52,7 +52,7 @@ export default function ClassTestMarks() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: `${d.test.subjectName}, ${classLabel(d.section.className)} ${d.section.sectionName}` }} />
+      <Stack.Screen options={{ title: `${d.test.subjectName}, ${sectionLabel(d.section.className, d.section.sectionName)}` }} />
       <FlatList
         data={d.students}
         keyExtractor={(x) => x.id}

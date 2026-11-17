@@ -125,8 +125,8 @@ const tByName = (n: string) => teachers.find((t) => t.name === n)!;
 const sections: { id: string; classId: string; className: string; subjects: string[]; teacherOf: Record<string, string> }[] = [];
 for (const c of classes) {
   const ct = tByName(CLASS_TEACHER[c.name]!);
-  const sec = await one('INSERT INTO sections (school_id, academic_year_id, class_id, name, class_teacher_membership) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-    [SID, yearId, c.id, 'A', ct.membershipId]);
+  const sec = await one('INSERT INTO sections (school_id, academic_year_id, class_id, name, seats, class_teacher_membership) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+    [SID, yearId, c.id, '', 40, ct.membershipId]);
   const subs = SUBJECTS[groupOf(c.name)];
   const teacherOf: Record<string, string> = {};
   for (const sub of subs) {
@@ -427,7 +427,7 @@ const bva = await createSchool(db, { code: 'BVA', name: 'Brahmaputra Valley Acad
 await db.query(`UPDATE schools SET short_name = 'BVA', brand_color = '#22B3C4', affiliation_no = '2030789' WHERE id = $1`, [bva.schoolId]);
 const bvaYear = (await one('SELECT id FROM academic_years WHERE school_id = $1', [bva.schoolId])).id;
 const bvaClass = await one(`SELECT id FROM classes WHERE school_id = $1 AND name = '2'`, [bva.schoolId]);
-const bvaSec = await one(`INSERT INTO sections (school_id, academic_year_id, class_id, name) VALUES ($1, $2, $3, 'A') RETURNING id`, [bva.schoolId, bvaYear, bvaClass.id]);
+const bvaSec = await one(`INSERT INTO sections (school_id, academic_year_id, class_id, name) VALUES ($1, $2, $3, '') RETURNING id`, [bva.schoolId, bvaYear, bvaClass.id]);
 const bvaM = await one('INSERT INTO memberships (school_id, account_id, display_name) VALUES ($1, $2, $3) RETURNING id', [bva.schoolId, imran.accountId, 'Imran Hussain']);
 await db.query(`INSERT INTO membership_roles (school_id, membership_id, role) VALUES ($1, $2, 'parent')`, [bva.schoolId, bvaM.id]);
 const bvaFam = await one(`INSERT INTO families (school_id, phone, account_id, father_name, mother_name) VALUES ($1, $2, $3, 'Imran Hussain', 'Rehana Begum') RETURNING id`, [bva.schoolId, imran.phone, imran.accountId]);

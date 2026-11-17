@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { FeesTabs, MODES, inr, niceDate } from '@/components/FeesTabs';
 import { Loading } from '@/components/ui';
 
@@ -51,7 +51,7 @@ export default function DayBook() {
                     <td className="num"><Link href={`/fees/receipts/${r.id}`}>{r.receiptNo}</Link></td>
                     <td className="small nowrap">{niceDate(r.paidOn)}, {new Date(r.createdAt).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</td>
                     <td><strong>{r.studentName}</strong> <span className="small muted">{r.admissionNo}</span></td>
-                    <td className="small">{r.className ? `${classLabel(r.className)} ${r.sectionName}` : '-'}</td>
+                    <td className="small">{r.className ? `${sectionLabel(r.className, r.sectionName)}` : '-'}</td>
                     <td className="small">{MODES[r.mode]}{r.reference ? ` (${r.reference})` : ''}</td>
                     <td className="money">{inr(r.total)}</td>
                     <td className="small keep">{r.status === 'cancelled'

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 import { API_URL } from '@/lib/api';
 import { useParent } from '@/lib/auth';
-import { classLabel } from '@/lib/theme';
+import { classLabel, sectionLabel } from '@/lib/theme';
 import { Button, Card, Loading, Logo, T } from '@/components/ui';
 
 export default function Account() {
@@ -17,7 +17,7 @@ export default function Account() {
       <Card style={{ gap: 8 }}>
         <T bold>Children linked to this number</T>
         {state.children.map((c) => (
-          <T key={c.id} size={15}>{c.first_name} {c.last_name ?? ''}, {c.class_name ? `${classLabel(c.class_name)} ${c.section_name}, ` : ''}{c.schoolName}</T>
+          <T key={c.id} size={15}>{c.first_name} {c.last_name ?? ''}, {c.class_name ? `${sectionLabel(c.class_name, c.section_name)}, ` : ''}{c.schoolName}</T>
         ))}
         <T soft size={13}>Missing a child? Ask their school office to use this mobile number as the family number.</T>
       </Card>

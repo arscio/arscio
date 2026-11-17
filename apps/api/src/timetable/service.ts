@@ -85,7 +85,7 @@ export async function scheduleFor(tx: Tx, s: Settings, day: DayInfo): Promise<Pe
   if (!day.dayNo) return [];
   const rows = (await tx.query(
     `SELECT t.id AS "slotId", t.section_id AS "sectionId",
-            CASE WHEN c.name ~ '^[0-9]+$' THEN 'Class ' || c.name ELSE c.name END || ' ' || sec.name AS "classLabel",
+            section_label(c.name, sec.name) AS "classLabel",
             t.period_no AS "periodNo", t.subject_id AS "subjectId", sub.name AS subject,
             t.membership_id AS "teacherId", m.display_name AS "teacherName",
             sb.id AS "subId", sb.substitute_membership AS "subMembership", sm.display_name AS "subName"

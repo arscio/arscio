@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, call } from '@/lib/api';
-import { C, SH, classLabel, longDate } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel, longDate } from '@/lib/theme';
 import { Avatar, Button, Card, ErrorText, Loading, T } from '@/components/ui';
 import type { Today } from '../index';
 
@@ -71,7 +71,7 @@ export default function AttendanceScreen() {
   if (!sheet || !today) {
     return error ? <View style={{ padding: 16 }}><ErrorText error={error} /></View> : <Loading />;
   }
-  const title = `${classLabel(sheet.section.className)} ${sheet.section.sectionName}`;
+  const title = `${sectionLabel(sheet.section.className, sheet.section.sectionName)}`;
 
   const save = async () => {
     setBusy(true); setError(null);

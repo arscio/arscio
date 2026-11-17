@@ -19,14 +19,16 @@ export interface Me {
 
 export interface Section {
   id: string; name: string; classTeacherId: string | null; classTeacherName: string | null; students: number;
+  seats?: number | null; seatsOkUpTo?: number | null;
 }
+export interface SeatAlert { classId: string; sectionId: string; label: string; students: number; seats: number; sections: number }
 export interface ClassRow {
   id: string; name: string; sort_order: number;
   assessment_style: 'grades_only' | 'marks_and_grades';
   sections: Section[]; subject_ids: string[];
 }
 export interface Subject { id: string; name: string; code: string | null }
-export interface Structure { year: { id: string; name: string }; classes: ClassRow[]; subjects: Subject[] }
+export interface Structure { year: { id: string; name: string }; classes: ClassRow[]; subjects: Subject[]; seatAlerts?: SeatAlert[] }
 
 export interface StaffMember {
   membershipId: string; accountId: string; name: string; designation: string | null;
@@ -43,4 +45,7 @@ export interface StudentRow {
 }
 
 export const classLabel = (name: string) => (/^\d+$/.test(name) ? `Class ${name}` : name);
+// "Class 6" when the class has one section (stored without a letter), "Class 6 B" when it has several.
+export const sectionLabel = (className: string, sectionName?: string | null) =>
+  `${classLabel(className)}${sectionName ? ` ${sectionName}` : ''}`;
 export const showPhone = (p: string) => p.replace(/^\+91(\d{5})(\d{5})$/, '$1 $2');

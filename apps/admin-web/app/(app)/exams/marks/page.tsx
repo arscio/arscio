@@ -6,7 +6,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { ExamsTabs, shortDate, type ExamSetup } from '@/components/Exams';
 import { ErrorBox, Loading, useToast } from '@/components/ui';
 
@@ -96,11 +96,11 @@ export default function MarksPage() {
                 <thead><tr><th>Class</th><th>Subject</th><th>Enters the marks</th><th>Entered</th><th>Status</th><th></th></tr></thead>
                 <tbody>{rows.map((r) => (
                   <tr key={`${r.sectionId}-${r.subjectId}`}>
-                    <td className="nowrap"><strong>{classLabel(r.className)} {r.sectionName}</strong></td>
+                    <td className="nowrap"><strong>{sectionLabel(r.className, r.sectionName)}</strong></td>
                     <td>{r.subjectName}</td>
                     <td style={{ minWidth: 190 }}>
                       {r.teacher.candidates.length > 1 ? (
-                        <select className="input" aria-label={`Who enters ${r.subjectName} marks for ${classLabel(r.className)} ${r.sectionName}`}
+                        <select className="input" aria-label={`Who enters ${r.subjectName} marks for ${sectionLabel(r.className, r.sectionName)}`}
                           value={r.teacher.how === 'chosen' ? r.teacher.membershipId ?? '' : ''}
                           onChange={(e) => act(() => api.put('/marks/teacher', { sectionId: r.sectionId, subjectId: r.subjectId, membershipId: e.target.value || null }),
                             e.target.value ? 'Teacher chosen' : 'Choice removed')}>

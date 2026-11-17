@@ -4,7 +4,7 @@
 // that family (brothers and sisters show together in the parent app).
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, type Structure } from '@/lib/types';
 import { ErrorBox, Field, PhoneInput } from './ui';
 import { PhotoPicker } from './StudentFile';
 
@@ -39,7 +39,10 @@ export function StudentForm({ initial, editing, onSubmit, submitLabel }: {
 
   const set = (k: keyof StudentValues, val: string) => setV({ ...v, [k]: val });
   const setF = (k: keyof StudentValues['family'], val: string) => setV({ ...v, family: { ...v.family, [k]: val } });
-  const sections = structure?.classes.flatMap((c) => c.sections.map((s) => ({ id: s.id, label: `${classLabel(c.name)} ${s.name}` }))) ?? [];
+  const sections = structure?.classes.flatMap((c) => c.sections.map((s) => ({
+    id: s.id,
+    label: `${sectionLabel(c.name, s.name)}${s.seats != null ? ` (${s.students} of ${s.seats} seats${s.students >= s.seats ? ', full' : ''})` : ''}`,
+  }))) ?? [];
 
   const submit = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError(null);
@@ -90,7 +93,7 @@ export function StudentForm({ initial, editing, onSubmit, submitLabel }: {
           ) : null}
         </div>
         <div className="grid-3">
-          <Field label={`Class and section (${structure?.year.name ?? ''})`} htmlFor="sec"
+          <Field label={`Class (${structure?.year.name ?? ''})`} htmlFor="sec"
             hint={structure && sections.length === 0 ? 'Add sections on the Classes page first.' : undefined}>
             <select id="sec" className="input" required value={v.sectionId} onChange={(e) => set('sectionId', e.target.value)}>
               <option value="">Choose…</option>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { classLabel, showPhone, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, showPhone, type Structure } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { FeesTabs, inr, niceDate } from '@/components/FeesTabs';
 import { Loading } from '@/components/ui';
@@ -51,7 +51,7 @@ export default function Defaulters() {
                   <tr key={d.studentId}>
                     <td className="num muted">{d.rollNo ?? '-'}</td>
                     <td><strong>{d.name}</strong> <span className="small muted">{d.admissionNo}</span></td>
-                    <td className="small">{d.className ? `${classLabel(d.className)} ${d.sectionName}` : '-'}</td>
+                    <td className="small">{d.className ? `${sectionLabel(d.className, d.sectionName)}` : '-'}</td>
                     <td className="small">{d.parentName ?? '-'}</td>
                     <td className="num nowrap"><a href={`tel:${d.phone}`}>{showPhone(d.phone)}</a></td>
                     <td className="small">{d.instalmentNames}<div className="muted">since {niceDate(d.oldestDue)}</div></td>

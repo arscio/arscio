@@ -193,6 +193,13 @@ a { color: var(--board); }
   border-radius: 10px; padding: 4px 6px 4px 10px; margin: 3px 6px 3px 0; background: var(--panel); box-shadow: var(--raised-sm); font-size: 0.9375rem;
 }
 .chip-section b { font-size: 1rem; }
+.seat-alerts { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.seat-alert { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: var(--marigold-wash); color: var(--ink); padding: 12px 16px; border-radius: 14px; }
+.over { color: var(--red-ink); font-weight: 600; }
+.pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 14px; max-height: 46vh; overflow: auto; padding: 4px; border-radius: 12px; box-shadow: var(--inset); }
+.pick-list .check { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 7px 8px; border-radius: 8px; }
+.pick-list .check:hover { background: var(--paper); }
+.split-sum { display: flex; gap: 22px; flex-wrap: wrap; padding: 10px 14px; border-radius: 12px; background: var(--paper); }
 .notice { background: var(--marigold-wash); color: var(--marigold); padding: 12px 16px; border-radius: 14px; }
 .error-box { background: var(--red-wash); padding: 11px 16px; border-radius: 14px; color: var(--red-ink); }
 .empty { padding: 36px 22px; text-align: center; color: var(--ink-soft); }

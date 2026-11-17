@@ -113,7 +113,8 @@ async function checkStudents(c: Ctx, sheet: Sheet, m: Record<string, number | nu
       const cls = classes.find((x) => x.name === cm.className)!;
       const secName = (text(get(r, m, 'section')) ?? cm.section ?? '').toUpperCase();
       const options = sections.filter((s) => s.class_id === cls.id);
-      const sec = secName ? options.find((s) => s.name.toUpperCase() === secName) : options.length === 1 ? options[0] : undefined;
+      // A class with one section takes everyone, whatever letter the file uses ("6", "6A").
+      const sec = options.length === 1 ? options[0] : secName ? options.find((s) => s.name.toUpperCase() === secName) : undefined;
       if (!options.length) msg.push(`Class ${cm.className} has no sections this year. Add one in Classes & sections.`);
       else if (!sec) msg.push(secName ? `Class ${cm.className} has no section ${secName}` : `Say which section of Class ${cm.className}`);
       else sectionId = sec.id;
@@ -298,7 +299,7 @@ async function checkMarks(c: Ctx, sheet: Sheet, m: Record<string, number | null>
       || (roll != null && s.students.find((x) => x.roll_no === roll))
       || (nm && s.students.filter((x) => x.name.toLowerCase() === nm.toLowerCase()).length === 1 && s.students.find((x) => x.name.toLowerCase() === nm.toLowerCase()))
       || null;
-    if (!st) msg.push(`No student ${adm ?? (roll != null ? `with roll ${roll}` : nm ?? '')} in Class ${s.section.class_name} ${s.section.name}`);
+    if (!st) msg.push(`No student ${adm ?? (roll != null ? `with roll ${roll}` : nm ?? '')} in Class ${s.section.class_name}${s.section.name ? ` ${s.section.name}` : ''}`);
     else if (seen.has(st.id)) msg.push(`${st.name} appears twice in the file`);
     if (st) seen.add(st.id);
     const marks: MarkRow[] = [];

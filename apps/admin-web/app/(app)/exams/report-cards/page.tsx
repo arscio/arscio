@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, type Structure } from '@/lib/types';
 import { ExamsTabs, pct, type Report } from '@/components/Exams';
 import { Loading, useToast } from '@/components/ui';
 
@@ -50,7 +50,7 @@ export default function ReportCardsPage() {
         <div className="row">
           <label htmlFor="sec" className="small muted">Class</label>
           <select id="sec" className="input" style={{ width: 200 }} value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
-            {structure.classes.flatMap((c) => c.sections.map((s) => <option key={s.id} value={s.id}>{classLabel(c.name)} {s.name}</option>))}
+            {structure.classes.flatMap((c) => c.sections.map((s) => <option key={s.id} value={s.id}>{sectionLabel(c.name, s.name)}</option>))}
           </select>
           {terms.length ? (<>
             <label htmlFor="term" className="small muted">Remarks for</label>

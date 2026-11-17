@@ -3,6 +3,7 @@
 import type { FastifyInstance, preHandlerHookHandler } from 'fastify';
 import { z } from 'zod';
 import { nextAdmissionNo } from '../students/file.js';
+import { addSection, moveStudents, seatAlerts, tidyAfterRemove } from '../students/sections.js';
 import { GRANTABLE, ROLES, canAssignRole, normalizeIndianPhone, type Permission, type Role } from '@arscio/shared';
 import type { Db, Tx } from '../db.js';
 import { badRequest, forbidden, notFound } from '../errors.js';
@@ -66,7 +67,7 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
       const classes = (await tx.query(
         `SELECT c.id, c.name, c.sort_order, c.assessment_style,
                 coalesce((SELECT json_agg(json_build_object(
-                    'id', s.id, 'name', s.name,
+                    'id', s.id, 'name', s.name, 'seats', s.seats, 'seatsOkUpTo', s.seats_ok_up_to,
                     'classTeacherId', s.class_teacher_membership,
                     'classTeacherName', m.display_name,
                     'students', (SELECT count(*) FROM enrollments e WHERE e.section_id = s.id))
@@ -79,21 +80,52 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
         [year.id],
       )).rows;
       const subjects = (await tx.query('SELECT id, name, code FROM subjects ORDER BY name')).rows;
-      return { year, classes, subjects };
+      return { year, classes, subjects, seatAlerts: await seatAlerts(tx, year.id) };
     });
   });
 
   // ---------- Sections ----------
   app.post('/sections', pre, async (req) => {
     must(req, 'school.settings');
-    const b = z.object({ classId: uuid, name: z.string().trim().min(1).max(20) }).parse(req.body);
+    const b = z.object({ classId: uuid, name: z.string().trim().max(20).optional() }).parse(req.body);
     return schoolTx(db, req, async (tx) => {
       const year = await currentYear(tx);
-      return (await tx.query(
-        `INSERT INTO sections (school_id, academic_year_id, class_id, name)
-         VALUES ($1, $2, $3, upper($4)) RETURNING id, name`,
-        [req.school!.schoolId, year.id, b.classId, b.name],
-      ).catch((e) => friendly(e, { duplicate: `Section ${b.name.toUpperCase()} already exists in this class` }))).rows[0];
+      return addSection(tx, req.school!.schoolId, b.classId, year.id, b.name);
+    });
+  });
+
+  /** Make a new section and move the chosen students into it, in one go. */
+  app.post('/classes/:id/split', pre, async (req) => {
+    must(req, 'school.settings');
+    const { id } = z.object({ id: uuid }).parse(req.params);
+    const b = z.object({ studentIds: z.array(uuid).min(1, 'Choose who moves to the new section').max(500) }).parse(req.body);
+    return schoolTx(db, req, async (tx) => {
+      const year = await currentYear(tx);
+      const sec = await addSection(tx, req.school!.schoolId, id, year.id);
+      const moved = await moveStudents(tx, b.studentIds, sec.id);
+      // Deciding is done: the sections start fresh.
+      await tx.query('UPDATE sections SET seats_ok_up_to = NULL WHERE class_id = $1 AND academic_year_id = $2', [id, year.id]);
+      return { section: sec, moved };
+    });
+  });
+
+  /** Move students to another section of the same class. */
+  app.post('/students/move', pre, async (req) => {
+    must(req, 'school.settings');
+    const b = z.object({ studentIds: z.array(uuid).min(1).max(500), toSectionId: uuid }).parse(req.body);
+    return schoolTx(db, req, async (tx) => ({ moved: await moveStudents(tx, b.studentIds, b.toSectionId) }));
+  });
+
+  /** "Keep as it is": the principal accepts more students than seats; asked again only if more join. */
+  app.post('/sections/:id/keep', pre, async (req) => {
+    must(req, 'school.settings');
+    const { id } = z.object({ id: uuid }).parse(req.params);
+    return schoolTx(db, req, async (tx) => {
+      const r = await tx.query(
+        `UPDATE sections s SET seats_ok_up_to = (SELECT count(*) FROM enrollments e WHERE e.section_id = s.id)
+          WHERE s.id = $1 RETURNING seats_ok_up_to AS "seatsOkUpTo"`, [id]);
+      if (!r.rowCount) throw notFound('Section not found');
+      return r.rows[0];
     });
   });
 
@@ -103,14 +135,21 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
     const b = z.object({
       name: z.string().trim().min(1).max(20).optional(),
       classTeacherId: uuid.nullable().optional(),
+      seats: z.number().int().min(1, 'Seats must be at least 1').max(500).nullable().optional(),
     }).parse(req.body);
     return schoolTx(db, req, async (tx) => {
+      if (b.name) {
+        const only = (await tx.query(`SELECT name = '' AS plain FROM sections WHERE id = $1`, [id])).rows[0];
+        if (only?.plain) throw badRequest('single_section', 'A class with one section has no letter. Add a second section first.');
+      }
       const r = await tx.query(
         `UPDATE sections SET
            name = coalesce(upper($2), name),
-           class_teacher_membership = CASE WHEN $4 THEN $3::uuid ELSE class_teacher_membership END
-         WHERE id = $1 RETURNING id, name, class_teacher_membership AS "classTeacherId"`,
-        [id, b.name ?? null, b.classTeacherId ?? null, b.classTeacherId !== undefined],
+           class_teacher_membership = CASE WHEN $4 THEN $3::uuid ELSE class_teacher_membership END,
+           seats = CASE WHEN $6 THEN $5::int ELSE seats END,
+           seats_ok_up_to = CASE WHEN $6 THEN NULL ELSE seats_ok_up_to END
+         WHERE id = $1 RETURNING id, name, seats, class_teacher_membership AS "classTeacherId"`,
+        [id, b.name ?? null, b.classTeacherId ?? null, b.classTeacherId !== undefined, b.seats ?? null, b.seats !== undefined],
       ).catch((e) => friendly(e, { duplicate: 'That section name is already used in this class' }));
       if (!r.rowCount) throw notFound('Section not found');
       return r.rows[0];
@@ -121,10 +160,13 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
     must(req, 'school.settings');
     const { id } = z.object({ id: uuid }).parse(req.params);
     return schoolTx(db, req, async (tx) => {
+      const sec = (await tx.query<{ class_id: string; academic_year_id: string }>(
+        'SELECT class_id, academic_year_id FROM sections WHERE id = $1', [id])).rows[0];
+      if (!sec) throw notFound('Section not found');
       await tx.query('DELETE FROM section_teachers WHERE section_id = $1', [id]);
-      const r = await tx.query('DELETE FROM sections WHERE id = $1', [id])
-        .catch((e) => friendly(e, { inUse: 'This section has students or records in it, so it cannot be removed' }));
-      if (!r.rowCount) throw notFound('Section not found');
+      await tx.query('DELETE FROM sections WHERE id = $1', [id])
+        .catch((e) => friendly(e, { inUse: 'This section has students or records in it. Move its students to another section first.' }));
+      await tidyAfterRemove(tx, sec.class_id, sec.academic_year_id);
       return { ok: true };
     });
   });
@@ -479,7 +521,13 @@ export function registerSetupRoutes(app: FastifyInstance, db: Db, requireSchool:
 
       const siblings = (await tx.query<{ n: number }>(
         'SELECT count(*)::int AS n FROM students WHERE family_id = $1 AND id <> $2', [family.id, student.id])).rows[0]!.n;
-      return { id: student.id, admissionNo, familyId: family.id, newFamily: family.created, siblings };
+      // Admission is never blocked by seats; the principal is told and decides on the home screen.
+      const full = (await tx.query<{ label: string; students: number; seats: number }>(
+        `SELECT section_label(c.name, s.name) AS label, s.seats,
+                (SELECT count(*)::int FROM enrollments e WHERE e.section_id = s.id) AS students
+           FROM sections s JOIN classes c ON c.id = s.class_id WHERE s.id = $1`, [b.sectionId])).rows[0];
+      const overSeats = full && full.seats != null && full.students > full.seats ? full : null;
+      return { id: student.id, admissionNo, familyId: family.id, newFamily: family.created, siblings, overSeats };
     });
   });
 

@@ -2,7 +2,7 @@
 // Notices: write once, choose who gets it, and it arrives as an app notification.
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel, type Structure } from '@/lib/types';
+import { classLabel, sectionLabel, type Structure } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { ErrorBox, Field, Loading, Panel, useToast } from '@/components/ui';
 
@@ -28,7 +28,7 @@ export default function NoticesPage() {
   if (!list || !structure) return <Loading />;
 
   const classNames = new Map(structure.classes.map((c) => [c.id, classLabel(c.name)]));
-  const sectionNames = new Map(structure.classes.flatMap((c) => c.sections.map((s) => [s.id, `${classLabel(c.name)} ${s.name}`] as const)));
+  const sectionNames = new Map(structure.classes.flatMap((c) => c.sections.map((s) => [s.id, `${sectionLabel(c.name, s.name)}`] as const)));
   const to = (n: Notice) => n.audience === 'classes' ? n.classIds.map((id) => classNames.get(id)).join(', ')
     : n.audience === 'sections' ? n.sectionIds.map((id) => sectionNames.get(id)).join(', ') : AUDIENCE[n.audience];
 
@@ -118,7 +118,7 @@ function Compose({ structure, onSent }: { structure: Structure; onSent: (m: stri
       ) : null}
       {audience === 'sections' ? (
         <div className="checks">{structure.classes.flatMap((c) => c.sections.map((s) => (
-          <label key={s.id} className="check"><input type="checkbox" checked={sectionIds.includes(s.id)} onChange={() => setSectionIds(toggle(sectionIds, s.id))} />{classLabel(c.name)} {s.name}</label>
+          <label key={s.id} className="check"><input type="checkbox" checked={sectionIds.includes(s.id)} onChange={() => setSectionIds(toggle(sectionIds, s.id))} />{sectionLabel(c.name, s.name)}</label>
         )))}</div>
       ) : null}
       <p className="small muted">It goes out as an app notification right away. SMS is not used for notices.</p>

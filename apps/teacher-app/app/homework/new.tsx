@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
-import { C, SH, classLabel } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { Button, Card, ErrorText, Input, Loading, T } from '@/components/ui';
 import { shortDate } from './index';
 
@@ -58,7 +58,7 @@ export default function NewHomework() {
   if (!classes) return error ? <View style={{ padding: 16 }}><ErrorText error={error} /></View> : <Loading />;
 
   const chosen = classes.find((c) => c.sectionId === sectionId);
-  const label = chosen ? `${classLabel(chosen.className)} ${chosen.sectionName}` : '';
+  const label = chosen ? `${sectionLabel(chosen.className, chosen.sectionName)}` : '';
 
   if (sent !== null) {
     return (
@@ -86,7 +86,7 @@ export default function NewHomework() {
           <T bold size={15}>Class</T>
           <View style={s.wrap} accessibilityRole="radiogroup">
             {shown.map((c) => (
-              <Chip key={c.sectionId} label={`${classLabel(c.className)} ${c.sectionName}`} on={c.sectionId === sectionId} onPress={() => pickClass(c)} />
+              <Chip key={c.sectionId} label={`${sectionLabel(c.className, c.sectionName)}`} on={c.sectionId === sectionId} onPress={() => pickClass(c)} />
             ))}
           </View>
           {!showAll ? <Button kind="quiet" label="Show all classes" onPress={() => setShowAll(true)} style={{ alignSelf: 'flex-start' }} /> : null}

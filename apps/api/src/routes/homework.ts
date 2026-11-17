@@ -59,7 +59,7 @@ export function registerHomeworkRoutes(app: FastifyInstance, db: Db, requireScho
     if (b.dueOn && b.dueOn < todayIST()) throw badRequest('past_date', 'The due date has already passed');
     return schoolTx(db, req, async (tx) => {
       const sec = (await tx.query<{ class_id: string; label: string }>(
-        `SELECT s.class_id, (CASE WHEN c.name ~ '^\\d+$' THEN 'Class ' || c.name ELSE c.name END) || ' ' || s.name AS label
+        `SELECT s.class_id, section_label(c.name, s.name) AS label
            FROM sections s JOIN classes c ON c.id = s.class_id WHERE s.id = $1`, [b.sectionId])).rows[0];
       if (!sec) throw notFound('Class not found');
       let subjectName: string | null = null;

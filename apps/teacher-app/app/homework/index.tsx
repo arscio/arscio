@@ -3,7 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
-import { C, classLabel } from '@/lib/theme';
+import { C, classLabel, sectionLabel } from '@/lib/theme';
 import { Button, Card, ErrorText, Loading, T } from '@/components/ui';
 
 export interface Homework {
@@ -49,7 +49,7 @@ export default function HomeworkList() {
       ListEmptyComponent={<Card><T soft>You haven&apos;t given any homework in the last two weeks.</T></Card>}
       renderItem={({ item }) => (
         <Card style={{ gap: 6 }}>
-          <T soft size={14}>{classLabel(item.className)} {item.sectionName}{item.subjectName ? `  |  ${item.subjectName}` : ''}</T>
+          <T soft size={14}>{sectionLabel(item.className, item.sectionName)}{item.subjectName ? `  |  ${item.subjectName}` : ''}</T>
           <T bold size={17}>{item.title}</T>
           {item.details ? <T size={15}>{item.details}</T> : null}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>

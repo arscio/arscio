@@ -221,7 +221,7 @@ export function registerAttendanceRoutes(app: FastifyInstance, db: Db, requireSc
             `INSERT INTO notifications (school_id, account_id, channel, title, body, data)
              SELECT $1, f.account_id, 'push', 'Absent today',
                     st.first_name || ' was marked absent in ' ||
-                      CASE WHEN $4 ~ '^\\d+$' THEN 'Class ' || $4 ELSE $4 END || ' ' || $5 || ' on ' || $6 || '.',
+                      section_label($4, $5) || ' on ' || $6 || '.',
                     jsonb_build_object('kind', 'absent', 'studentId', st.id, 'date', $3::text)
                FROM students st JOIN families f ON f.id = st.family_id
               WHERE st.id = $2 AND f.account_id IS NOT NULL

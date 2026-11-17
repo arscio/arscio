@@ -2,7 +2,7 @@
 // Excel import and export: download any list, or bring in students, staff and marks from any Excel file.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, api, fileUrl } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { ErrorBox, Field, Loading, useToast } from '@/components/ui';
 
@@ -86,7 +86,7 @@ function Exports({ o }: { o: Options }) {
         {classes.map(([cid, cname]) => (
           <optgroup key={cid} label={classLabel(cname)}>
             {allowAll ? <option value={`c:${cid}`}>{classLabel(cname)}, all sections</option> : null}
-            {o.sections.filter((s) => s.classId === cid).map((s) => <option key={s.id} value={s.id}>{classLabel(s.className)} {s.name}</option>)}
+            {o.sections.filter((s) => s.classId === cid).map((s) => <option key={s.id} value={s.id}>{sectionLabel(s.className, s.name)}</option>)}
           </optgroup>
         ))}
       </select>
@@ -195,7 +195,7 @@ function Import({ o, onDone }: { o: Options; onDone: (m: string) => void }) {
               {o.exams.map((x) => <option key={x.id} value={x.id} disabled={x.locked}>{x.termName}: {x.name}{x.locked ? ' (locked)' : ''}</option>)}</select></Field>
             <Field label="Class" htmlFor="ic"><select id="ic" className="input" value={sectionId} onChange={(e) => { setSectionId(e.target.value); reset(); }}>
               <option value="">Choose…</option>
-              {sectionsForExam.map((x) => <option key={x.id} value={x.id}>{classLabel(x.className)} {x.name}</option>)}</select></Field>
+              {sectionsForExam.map((x) => <option key={x.id} value={x.id}>{sectionLabel(x.className, x.name)}</option>)}</select></Field>
           </div>
         ) : null}
         <p className="small" style={{ margin: 0 }}>

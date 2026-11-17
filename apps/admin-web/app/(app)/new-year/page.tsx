@@ -2,7 +2,7 @@
 // Moving to a new school year: prepare it, decide for each student, then start it.
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { ErrorBox, Field, Loading, useToast } from '@/components/ui';
 
 type Action = 'promote' | 'repeat' | 'leave' | 'passed_out';
@@ -133,7 +133,7 @@ function Prepared({ s, onChanged }: { s: State; onChanged: (m: string) => void }
               {adding === c.id ? (
                 <form className="row" style={{ gap: 4 }} onSubmit={async (e) => {
                   e.preventDefault(); setErr(null);
-                  try { await api.post('/new-year/sections', { classId: c.id, name }); setAdding(null); setName(''); onChanged(`${classLabel(c.name)} ${name.toUpperCase()} added`); }
+                  try { await api.post('/new-year/sections', { classId: c.id, name }); setAdding(null); setName(''); onChanged(`${sectionLabel(c.name, name.toUpperCase())} added`); }
                   catch (x) { setErr(x instanceof ApiError ? x.message : 'Could not add'); }
                 }}>
                   <input className="input" autoFocus style={{ width: 54, padding: '4px 8px' }} aria-label="New section name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -217,7 +217,7 @@ function Decide({ s, onStarted }: { s: State; onStarted: () => void }) {
             return (
               <div key={sec.id} className={`ny-sec ${isOpen ? 'is-open' : ''}`}>
                 <button className="ny-sec-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : sec.id)}>
-                  <strong>{classLabel(sec.className)} {sec.name}</strong>
+                  <strong>{sectionLabel(sec.className, sec.name)}</strong>
                   <span className="muted small">{list.length} students · {nc ? `move up to ${classLabel(s.classes.find((c) => c.id === nc)!.name)}` : 'last class: pass out'}</span>
                   {exceptions ? <span className="tag tag-warn">{exceptions} changed</span> : null}
                   <span aria-hidden className="ny-caret">{isOpen ? '−' : '+'}</span>
@@ -244,9 +244,9 @@ function Decide({ s, onStarted }: { s: State; onStarted: () => void }) {
                               {cls ? (opts.length > 1 ? (
                                 <select className="input" style={{ padding: '6px 10px' }} aria-label={`${st.name}: section next year`} value={d.sectionId}
                                   onChange={(e) => setDec((x) => ({ ...x, [st.id]: { ...d, sectionId: e.target.value } }))}>
-                                  {opts.map((o) => <option key={o.id} value={o.id}>{classLabel(o.className)} {o.name}</option>)}
+                                  {opts.map((o) => <option key={o.id} value={o.id}>{sectionLabel(o.className, o.name)}</option>)}
                                 </select>
-                              ) : opts[0] ? <span className="small">{classLabel(opts[0].className)} {opts[0].name}</span>
+                              ) : opts[0] ? <span className="small">{sectionLabel(opts[0].className, opts[0].name)}</span>
                                 : <span className="small" style={{ color: '#8A4B05' }}>No section next year</span>) : null}
                             </td>
                           </tr>

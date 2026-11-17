@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { schoolLogoUrl } from '@/lib/api';
 import { useParent, type Child } from '@/lib/auth';
-import { C, SH, classLabel, longDate } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel, longDate } from '@/lib/theme';
 import { T } from './ui';
 
 export function SchoolLogo({ child, size = 44 }: { child: Child; size?: number }) {
@@ -45,7 +45,7 @@ export function SchoolBand({ right }: { right?: ReactNode }) {
                 style={[s.kid, on ? { backgroundColor: accent, ...SH.glow(accent) } : { backgroundColor: '#F6FAFC', ...SH.raised }]}>
                 <T bold size={15} style={{ color: on ? '#fff' : C.ink }}>{c.first_name}</T>
                 <T size={12} style={{ color: on ? 'rgba(255,255,255,0.9)' : C.inkSoft }}>
-                  {c.class_name ? `${classLabel(c.class_name)} ${c.section_name}` : c.schoolShortName ?? ''}
+                  {c.class_name ? `${sectionLabel(c.class_name, c.section_name)}` : c.schoolShortName ?? ''}
                 </T>
               </Pressable>
             );

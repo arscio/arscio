@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
-import { C, SH, classLabel } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { Button, ErrorText, Input, Loading, T } from '@/components/ui';
 import { shortDate } from '../homework/index';
 
@@ -57,7 +57,7 @@ export default function NewClassTest() {
         <View style={{ gap: 8 }}>
           <T bold size={15}>Class</T>
           <View style={s.wrap} accessibilityRole="radiogroup">
-            {classes.map((c) => <Chip key={c.sectionId} label={`${classLabel(c.className)} ${c.sectionName}`} on={c.sectionId === sectionId} onPress={() => pick(c)} />)}
+            {classes.map((c) => <Chip key={c.sectionId} label={`${sectionLabel(c.className, c.sectionName)}`} on={c.sectionId === sectionId} onPress={() => pick(c)} />)}
           </View>
         </View>
         {chosen ? (

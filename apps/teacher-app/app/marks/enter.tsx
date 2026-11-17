@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError, call } from '@/lib/api';
-import { C, F, SH, classLabel } from '@/lib/theme';
+import { C, F, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { Avatar, Button, ErrorText, Loading, T } from '@/components/ui';
 
 interface Band { min?: number; max?: number; grade: string }
@@ -83,7 +83,7 @@ export default function EnterMarks() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: `${s.subject.name}, ${classLabel(s.section.className)} ${s.section.sectionName}` }} />
+      <Stack.Screen options={{ title: `${s.subject.name}, ${sectionLabel(s.section.className, s.section.sectionName)}` }} />
       <FlatList
         data={s.students}
         keyExtractor={(x) => x.id}

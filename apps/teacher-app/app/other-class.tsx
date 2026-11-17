@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { call } from '@/lib/api';
-import { classLabel } from '@/lib/theme';
+import { classLabel, sectionLabel } from '@/lib/theme';
 import { Card, Loading, T } from '@/components/ui';
 
 interface Row { sectionId: string; className: string; sectionName: string }
@@ -20,10 +20,10 @@ export default function OtherClass() {
       ListHeaderComponent={<T soft style={{ marginBottom: 6 }}>Covering a class? Choose it here. Your name is saved with the attendance.</T>}
       ListEmptyComponent={<T soft>The school has not added any sections yet.</T>}
       renderItem={({ item }) => (
-        <Card label={`${classLabel(item.className)} ${item.sectionName}`}
+        <Card label={`${sectionLabel(item.className, item.sectionName)}`}
           onPress={() => router.replace({ pathname: '/attendance/[sectionId]', params: { sectionId: item.sectionId } })}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <T bold size={18}>{classLabel(item.className)} {item.sectionName}</T>
+            <T bold size={18}>{sectionLabel(item.className, item.sectionName)}</T>
           </View>
         </Card>
       )}

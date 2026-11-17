@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api, photoSrc } from '@/lib/api';
-import { classLabel, showPhone, type StudentRow } from '@/lib/types';
+import { classLabel, sectionLabel, showPhone, type StudentRow } from '@/lib/types';
 import { useSchool } from '@/components/AppShell';
 import { FeesTabs, MODES, inr, niceDate } from '@/components/FeesTabs';
 import { ErrorBox, Field, Loading, Panel, useToast } from '@/components/ui';
@@ -69,7 +69,7 @@ function StudentSearch({ onPick }: { onPick: (id: string) => void }) {
           {rows.map((s) => (
             <button key={s.id} role="option" aria-selected={false} onClick={() => { onPick(s.id); setQ(''); setRows([]); }}>
               <span><strong>{s.firstName} {s.lastName ?? ''}</strong> <span className="muted small">{s.admissionNo}</span></span>
-              <span className="small muted">{s.className ? `${classLabel(s.className)} ${s.sectionName}` : ''}  {showPhone(s.familyPhone)}</span>
+              <span className="small muted">{s.className ? `${sectionLabel(s.className, s.sectionName)}` : ''}  {showPhone(s.familyPhone)}</span>
             </button>
           ))}
         </div>
@@ -152,7 +152,7 @@ function StudentFees({ studentId }: { studentId: string }) {
               <div>
                 <h2>{fullName}</h2>
                 <div className="small muted">
-                  {student.className ? `${classLabel(student.className)} ${student.sectionName ?? ''}` : 'No class this year'}
+                  {student.className ? `${sectionLabel(student.className, student.sectionName ?? '')}` : 'No class this year'}
                   {student.rollNo ? ` · Roll ${String(student.rollNo).padStart(2, '0')}` : ''}
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { ApiError, call } from '@/lib/api';
 import { useParent } from '@/lib/auth';
-import { C, SH, classLabel } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { Avatar, Button, Card, ErrorText, Loading, Pill, T } from '@/components/ui';
 import { TabBar } from '@/components/TabBar';
 import { SchoolBand } from '@/components/School';
@@ -83,7 +83,7 @@ export default function Home() {
   const pct = m && counted ? Math.round((m.present / counted) * 100) : null;
 
   const fullName = `${child.first_name} ${child.last_name ?? ''}`.trim();
-  const classLine = [child.class_name ? `${classLabel(child.class_name)} ${child.section_name ?? ''}`.trim() : null, s?.child.rollNo ? `Roll ${String(s.child.rollNo).padStart(2, '0')}` : null].filter(Boolean).join(' · ');
+  const classLine = [child.class_name ? `${sectionLabel(child.class_name, child.section_name ?? '')}`.trim() : null, s?.child.rollNo ? `Roll ${String(s.child.rollNo).padStart(2, '0')}` : null].filter(Boolean).join(' · ');
   const todayTone = today?.[1] ?? 'plain';
   const todayBg = todayTone === 'done' ? C.lagoonWash : todayTone === 'todo' ? C.marigoldWash : '#E4ECF0';
   const todayFg = todayTone === 'done' ? C.lagoonDeep : todayTone === 'todo' ? C.marigold : C.inkSoft;

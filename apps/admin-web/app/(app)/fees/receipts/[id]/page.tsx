@@ -7,7 +7,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { rupeesInWords } from '@arscio/shared';
 import { api } from '@/lib/api';
-import { classLabel } from '@/lib/types';
+import { classLabel, sectionLabel } from '@/lib/types';
 import { MODES, inr, niceDate } from '@/components/FeesTabs';
 import { Loading } from '@/components/ui';
 
@@ -83,7 +83,7 @@ function ReceiptCopy({ r, copy }: { r: Receipt; copy: string }) {
       </div>
       <div className="receipt-meta">
         <div><span className="muted">Student: </span><strong>{r.student.name}</strong></div>
-        <div><span className="muted">Class: </span><strong>{r.student.className ? `${classLabel(r.student.className)} ${r.student.sectionName}` : '-'}{r.student.rollNo ? `, Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</strong></div>
+        <div><span className="muted">Class: </span><strong>{r.student.className ? `${sectionLabel(r.student.className, r.student.sectionName)}` : '-'}{r.student.rollNo ? `, Roll ${String(r.student.rollNo).padStart(2, '0')}` : ''}</strong></div>
         <div><span className="muted">Parent: </span><strong>{r.student.fatherName ?? r.student.motherName ?? '-'}</strong></div>
         <div><span className="muted">Admission no.: </span><strong>{r.student.admissionNo}</strong></div>
       </div>

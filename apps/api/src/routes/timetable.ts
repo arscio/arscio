@@ -82,7 +82,7 @@ export function registerTimetableRoutes(app: FastifyInstance, db: Db, requireSch
     return schoolTx(db, req, async (tx) => {
       const s = await settings(tx);
       const sec = (await tx.query(
-        `SELECT s.id, s.class_id AS "classId", CASE WHEN c.name ~ '^[0-9]+$' THEN 'Class ' || c.name ELSE c.name END || ' ' || s.name AS label
+        `SELECT s.id, s.class_id AS "classId", section_label(c.name, s.name) AS label
            FROM sections s JOIN classes c ON c.id = s.class_id WHERE s.id = $1`, [id])).rows[0];
       if (!sec) throw notFound('Class not found');
       const slots = (await tx.query(

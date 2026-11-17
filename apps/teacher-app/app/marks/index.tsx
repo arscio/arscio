@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
-import { C, SH, classLabel } from '@/lib/theme';
+import { C, SH, classLabel, sectionLabel } from '@/lib/theme';
 import { ErrorText, Loading, Pill, T } from '@/components/ui';
 
 export interface MarksTask {
@@ -56,7 +56,7 @@ export default function MarksList() {
       ) : sorted.map((t) => {
         return (
           <Pressable key={`${t.examId}-${t.sectionId}-${t.subjectId}`} accessibilityRole="button"
-            accessibilityLabel={`${t.subjectName}, ${classLabel(t.className)} ${t.sectionName}, ${t.examName}`}
+            accessibilityLabel={`${t.subjectName}, ${sectionLabel(t.className, t.sectionName)}, ${t.examName}`}
             onPress={() => router.push({ pathname: '/marks/enter', params: { examId: t.examId, sectionId: t.sectionId, subjectId: t.subjectId } })}
             style={({ pressed }) => [st.card, pressed && { transform: [{ scale: 0.98 }] }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

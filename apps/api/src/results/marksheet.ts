@@ -117,7 +117,7 @@ export async function computeMarksheet(tx: Tx, studentId: string, yearId: string
 
   return {
     student: { id: st.id, name: st.name, admissionNo: st.admissionNo, rollNo: st.rollNo,
-      classLabel: `${classLabelOf(st.className)} ${st.sectionName}`, dateOfBirth: st.dateOfBirth,
+      classLabel: `${classLabelOf(st.className)}${st.sectionName ? ` ${st.sectionName}` : ''}`, dateOfBirth: st.dateOfBirth,
       fatherName: st.fatherName, motherName: st.motherName },
     yearName: st.yearName, style: st.style,
     exams: examList, rows, pct, grade: gradeFor(bands, pct), passed, result,

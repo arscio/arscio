@@ -3,7 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { ApiError, call } from '@/lib/api';
-import { C, classLabel } from '@/lib/theme';
+import { C, classLabel, sectionLabel } from '@/lib/theme';
 import { Button, Card, ErrorText, Loading, Pill, T } from '@/components/ui';
 import { shortDate } from '../homework/index';
 
@@ -38,7 +38,7 @@ export default function ClassTests() {
       renderItem={({ item }) => (
         <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/class-tests/[id]', params: { id: item.id } })}>
           <Card style={{ gap: 6 }}>
-            <T soft size={14}>{classLabel(item.className)} {item.sectionName}  |  {item.subjectName}</T>
+            <T soft size={14}>{sectionLabel(item.className, item.sectionName)}  |  {item.subjectName}</T>
             <T bold size={17}>{item.title}</T>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <T size={14} style={{ color: C.inkSoft }}>{shortDate(item.heldOn)} · out of {Number(item.maxMarks)}</T>
